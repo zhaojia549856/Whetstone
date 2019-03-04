@@ -11,27 +11,18 @@ from keras.optimizers import Adadelta
 from os import sys
 
 class neuro():
-    def __init__(self, model, key, format):
+    def __init__(self, model, key, format, path):
         self.model = model
         self.key = key
+        self.path = path
         self.loading()
         self.print_whetstone()
 
-        # self.get_info()
-        # self.print_model()
-        # if format == "danna2":
-        #     self.print_danna2("danna2.txt")
-        #     self.print_sup("supply.txt")
-        # elif format == "nida":
-        #     self.print_nida("nida.txt")
-        #     self.print_key("key.txt")
-        # elif format == "mrdanna":
-        #     self.print_mrdanna("mrdanna.txt")
-        #     self.print_sup("supply.txt")
-        # else:
-        #     self.print_whetstone("whetstone.txt")
-        #     self.print_key("key.txt")
-
+    def load_config(self):
+        self.neurons = []; self.synapses = []
+        self.input_size = list(self.model.layers[0].get_config()["batch_input_shape"][1:])
+        self.z_start = 0
+        self.id_start = 0 
 
     def loading(self):
         self.load_config()
@@ -94,12 +85,15 @@ class neuro():
         for i in range(len(self.neurons)): 
             self.neurons[i] = self.flatten(self.neurons[i])
             if len(self.neurons[i]) > self.xy_size:
-                xy_size = len(self.neurons[i])
+                self.xy_size = len(self.neurons[i])
 
     def construct_supply_file(self, layer):
         if type(layer) == keras.layers.Dense:
             print("first a dense layer")
-            f = open("supply.txt", "w")
+
+            weights, thresholds = layer.get_weights()
+            self.load_dense_neurons(0.5 - thresholds)
+            f = open(self.path + "supply.txt", "w")
             f.write("Dense\n")
             f.write("KEY: \n")
             for i in range(len(self.key)):
@@ -107,7 +101,7 @@ class neuro():
                 f.write("\n")
 
             f.write("L1: \n")
-            for i in layer.get_weights()[0]:
+            for i in weights:
                 f.write(" ".join(str(j) for j in i))
                 f.write("\n")
 
@@ -123,7 +117,7 @@ class neuro():
             self.load_conv2d_neurons(0.5 - thresholds)
             
             #write first layer to supply file
-            f = open("supply.txt", "w")
+            f = open(self.path + "supply.txt", "w")
             f.write("Conv2D\n")
 
             f.write("KEY: \n")
@@ -161,19 +155,21 @@ class neuro():
         layer = layer.tolist()
         return layer
 
-    def load_input_neurons(self): #TODO I dont think this is useful anymore *DELETE
-        first_layer = [] 
-        id = 0
-        for x in range(self.input_size[0]):
-            first_layer.append([])
-            for y in range(self.input_size[1]):
-                first_layer[x].append([])
-                for z in range(self.input_size[2]):
-                    first_layer[x][y].append(neuron(x, y, 0.0, id, z))
-                    id += 1
-        self.neurons.append(first_layer)
-        self.last_layer_size = self.input_size
-        self.z_start = self.input_size[2]
+    def num_neurons(self):
+        count = 0
+        for layer in self.neurons:
+            if len(np.array(layer).shape) != 1:
+                print("num_neurons error: layer dimension is not 1")
+                exit(0)
+            count += len(layer)
+        return count
+
+    def num_synapses(self):
+        count = 0
+        for layer in self.synapses:
+            count += len(layer)
+        return count
+
 
     def load_conv2d_neurons(self, thresholds):
         layer = np.empty([self.last_layer_size[0], self.last_layer_size[1], len(thresholds)], dtype=type(neuron))
@@ -181,16 +177,22 @@ class neuro():
             for y in range(self.last_layer_size[1]):
                 for z in range(len(thresholds)):
                     id = z*self.last_layer_size[1]*self.last_layer_size[0] + y*self.last_layer_size[0]+ x
-                    layer[x][y][z] = neuron(x, y, thresholds[z], id, self.z_start + z)
+                    layer[x][y][z] = neuron(x, y, thresholds[z], id + self.id_start, self.z_start + z)
         self.neurons.append(layer.tolist())
         self.z_start += len(thresholds)
+        self.id_start += id + 1
 
     def load_conv2d_synapses(self, filters, kernel_size, weights):
         if kernel_size[0] % 2 == 0:
             print("Can't deal with even kernal size")
             exit(1)
         layer = [] 
-        # print(np.array(weights).shape)
+
+        if len(self.synapses) == 0: 
+            id = 0
+        else: 
+            id = self.synapses[-1][-1].id + 1
+
         for x2 in range(self.last_layer_size[0]):
             for y2 in range(self.last_layer_size[1]):
                 for z2 in range(filters):
@@ -202,14 +204,15 @@ class neuro():
                                 if x >= 0 and x < self.last_layer_size[0] and y >= 0 and y < self.last_layer_size[1]:
                                     try: 
                                         layer.append(synapse(self.neurons[-2][x][y][z1], 
-                                            self.neurons[-1][x2][y2][z2], weights[x1][y1][z1][z2], 1)) 
+                                            self.neurons[-1][x2][y2][z2], weights[x1][y1][z1][z2], id)) 
+                                        id += 1
                                     except IndexError as e:
                                         print(e)
                                         print("Index in the neurons layer: (", x, y, z1, ",", x2, y2, z2, ")")
                                         print("Index in the network layer: (", x, y, self.z_start + z1 - self.last_layer_size[2], 
                                             ",", x2, y2, self.z_start + z2, ")")
                                         exit(1)
-        self.synapses.append(layer) #TODO synapse -> synapses
+        self.synapses.append(layer)
         self.last_layer_size[2] = filters
 
     def load_maxpooling_neurons(self, layer_size):
@@ -219,17 +222,22 @@ class neuro():
             for y in range(layer_size[1]):
                 layer[x].append([])
                 for z in range(layer_size[2]):
-                    layer[x][y].append(neuron(x, y, 0.5, 0, self.z_start + z))
+                    id = z*layer_size[1]*layer_size[0] + y*layer_size[0]+ x
+                    layer[x][y].append(neuron(x, y, 0.5, id + self.id_start, self.z_start + z))
         self.neurons.append(layer)
         self.z_start += layer_size[2]
+        self.id_start += id + 1
 
     def load_maxpooling_synapses(self, kernal_x, kernal_y):
         layer = [] 
+        id = self.synapses[-1][-1].id + 1
+
         for z in range(self.last_layer_size[2]):
             for y in range(self.last_layer_size[1]):
                 for x in range(self.last_layer_size[0]):
                     try:
-                        layer.append(synapse(self.neurons[-2][x][y][z], self.neurons[-1][x/kernal_x][y/kernal_y][z], 1, 0))
+                        layer.append(synapse(self.neurons[-2][x][y][z], self.neurons[-1][x/kernal_x][y/kernal_y][z], 1, id))
+                        id += 1
                     except IndexError as e:
                         print(e)
         self.synapses.append(layer)
@@ -237,15 +245,22 @@ class neuro():
     def load_dense_neurons(self, thresholds):
         layer = []
         for i in range(len(thresholds)):
-            layer.append(neuron(0, i, thresholds[i], i, self.z_start))
+            layer.append(neuron(0, i, thresholds[i], i + self.id_start, self.z_start))
         self.neurons.append(layer)
         self.z_start += 1
+        self.id_start += i + 1
 
     def load_dense_synapses(self, weights):
         layer = []
+        if len(self.synapses) == 0:
+            id = 0
+        else: 
+            id = self.synapses[-1][-1].id + 1
+            
         for i in range(len(weights)):
             for j in range(len(weights[i])):
-                layer.append(synapse(self.neurons[-2][i], self.neurons[-1][j], weights[i][j], 0))
+                layer.append(synapse(self.neurons[-2][i], self.neurons[-1][j], weights[i][j], id))
+                id += 1
         self.synapses.append(layer)
 
 ## DELETE 
@@ -265,7 +280,7 @@ class neuro():
 ## END DELETE
 
     def print_nida(self, filename="nida.net"):
-        f = open(filename, "w");
+        f = open(self.path + filename, "w");
         f.write("# CONFIG\nDIMS %d %d %d\nGRAN 1\n\nEND-CONFIG\n# NETWORK\n" % (self.xy_size, self.xy_size, self.z_start))
         self.f = f
         for neuron in self.neurons: 
@@ -281,9 +296,9 @@ class neuro():
         f.close()
 
     def print_whetstone(self, filename="whetstone.net"):
-        f = open(filename, "w");
-        # Whetstone max_neurons inputs outputs
-        f.write("Whetstone %d %d %d\n" % (self.xy_size * self.xy_size * self.z_start, len(self.neurons[0]), len(self.neurons[-1])))
+        f = open(self.path + filename, "w");
+        # Whetstone num_neurons num_synapses inputs outputs
+        f.write("Whetstone %d %d %d %d\n" % (self.num_neurons(), self.num_synapses(), len(self.neurons[0]), len(self.neurons[-1])))
 
         for i in range(len(self.neurons[0])):
             f.write(self.neurons[0][i].print_whetstone("I"))
@@ -298,91 +313,6 @@ class neuro():
             for i in range(len(layer)):
                 f.write(layer[i].print_whetstone())
 
-    # def print_model(self):
-    #     self.load_config()
-    #     self.load_elements()
-
-    def get_info(self):
-        self.weights = self.model.get_weights()
-        self.config = self.model.get_config()
-
-    def load_config(self):
-        self.neurons = []; self.synapses = []
-        self.input_size = list(self.model.layers[0].get_config()["batch_input_shape"][1:])
-        self.z_start = 0
-        self.id_start = 0
-
-    # def load_elements(self):
-    #     threshold = []; weights = []; self.neurons = []; self.synapses = []
-    #     id = 0
-    #     self.y_size = 0
-    #     for layer in self.model.layers:
-    #         #TODO if check for class type
-    #         if "kernel_initializer" in layer.get_config():
-    #             weights.append(layer.get_weights()[0])
-    #             #TODO variable threshold offset
-    #             threshold.append(0.5 - layer.get_weights()[1])
-    #             if self.y_size < len(threshold[-1]):
-    #                 self.y_size = len(threshold[-1])
-    #     self.neurons.append([neuron(0, i, 0.0, i) for i in range(self.input_size)])
-
-    #     id = i + len(threshold[-1]) + 1
-    #     for i in range(len(threshold)-1):
-    #         self.neurons.append([])
-    #         for j in range(len(threshold[i])):
-    #             self.neurons[i+1].append(neuron(i+1, j, threshold[i][j], id))
-    #             id += 1
-
-    #     id = self.input_size
-    #     self.neurons.append([neuron(len(threshold), j, threshold[-1][j], id+j) for j in range(len(threshold[-1]))])
-
-    #     id = 0
-    #     for i in range(1, len(self.neurons)):
-    #         for j in range(len(self.neurons[i])):
-    #             for h in range(len(self.neurons[i-1])):
-    #                 self.synapses.append(synapse(self.neurons[i-1][h], self.neurons[i][j], weights[i-1][h][j], id))
-    #                 id += 1
-    #     self.x_size = len(self.neurons[0])
-
-    # def print_weights(self, filename):
-    #     f = open(filename, "w");
-    #     f.write("".join(self.neurons[0][i].print_out(i, "Input") for i in range(len(self.neurons[0]))))
-    #     f.write("".join(self.neurons[-1][i].print_out(i, "Output") for i in range(len(self.neurons[-1]))))
-    #     count = 0
-    #     for i in range(1, len(self.neurons)-1):
-    #         for j in range(len(self.neurons[i])):
-    #             f.write(self.neurons[i][j].print_out(count, "Hidden"))
-    #             count += 1
-    #     f.write("".join(self.synapses[i].print_out(i) for i in range(len(self.synapses))))
-
-    # def print_nida(self, filename):
-    #     f = open(filename, "w");
-    #     f.write("# CONFIG\nDIMS %d %d 0\nGRAN 1\n\n# NETWORK\n" % (self.x_size, self.y_size))
-
-    #     f.write("".join(self.neurons[0][i].print_nida("N") for i in range(len(self.neurons[0]))))
-    #     f.write("".join(self.neurons[-1][i].print_nida("N") for i in range(len(self.neurons[-1]))))
-
-    #     for i in range(1, len(self.neurons)-1):
-    #         for j in range(len(self.neurons[i])):
-    #             f.write(self.neurons[i][j].print_nida("N"))
-
-    #     f.write("".join(self.synapses[i].print_nida() for i in range(len(self.synapses))))
-
-    #     f.write("".join(self.neurons[0][i].print_nida_output("INPUT") for i in range(len(self.neurons[0]))))
-    #     f.write("".join(self.neurons[-1][i].print_nida_output("OUTPUT") for i in range(len(self.neurons[-1]))))
-
-    # def print_whetstone(self, filename):
-    #     f = open(filename, "w");
-    #     f.write("Whetstone %d %d %d\n" % (self.x_size * self.y_size, self.x_size, self.y_size)) #TODO change to max size
-
-    #     f.write("".join(self.neurons[0][i].print_whetstone("I") for i in range(len(self.neurons[0]))))
-    #     f.write("".join(self.neurons[-1][i].print_whetstone("O") for i in range(len(self.neurons[-1]))))
-
-    #     for i in range(1, len(self.neurons)-1):
-    #         for j in range(len(self.neurons[i])):
-    #             f.write(self.neurons[i][j].print_whetstone("H"))
-
-    #     f.write("".join(self.synapses[i].print_whetstone() for i in range(len(self.synapses))))
 
     def print_danna2(self, filename):
         syn_t = len(self.neurons[0]) * len(self.neurons[1])
@@ -412,28 +342,6 @@ class neuro():
 
         f.write("".join(self.neurons[1][i].print_mrdanna_input(i) for i in range(len(self.neurons[1]))))
         f.write("".join(self.neurons[-1][i].print_mrdanna_output(i) for i in range(len(self.neurons[-1]))))
-
-
-    def print_sup(self, filename):  #TODO DELETE
-        f = open(filename, "w")
-
-        f.write("KEY: \n")
-        for i in range(len(self.key)):
-            f.write(" ".join(str(self.key[i][j]) for j in range(len(self.key[i]))))
-            f.write("\n")
-
-        f.write("L1: \n")
-        for i in self.model.layers[0].get_weights()[0]:
-            f.write(" ".join(str(j) for j in i))
-            f.write("\n")
-
-    def print_key(self, keyfile):
-        f = open(keyfile, "w")
-        for i in range(len(self.key)):
-            f.write(" ".join(str(self.key[i][j]) for j in range(len(self.key[i]))))
-            f.write("\n")
-        f.close()
-
 
 class neuron():
 
@@ -477,7 +385,7 @@ class neuron():
 
 class synapse():
 
-    def __init__(self, pre_n, post_n, weight, id, refc=0):
+    def __init__(self, pre_n, post_n, weight, id=0, refc=0):
         self.pre_n = pre_n
         self.post_n = post_n
         self.weight = weight
