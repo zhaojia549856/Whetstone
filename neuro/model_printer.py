@@ -280,7 +280,7 @@ class neuro():
 ## END DELETE
 
     def print_nida(self, filename="nida.net"):
-        f = open(self.path + filename, "w");
+        f = open(self.path + "../../" + filename, "w");
         f.write("# CONFIG\nDIMS %d %d %d\nGRAN 1\n\nEND-CONFIG\n# NETWORK\n" % (self.xy_size, self.xy_size, self.z_start))
         self.f = f
         for neuron in self.neurons: 
@@ -296,9 +296,9 @@ class neuro():
         f.close()
 
     def print_whetstone(self, filename="whetstone.net"):
-        f = open(self.path + filename, "w");
+        f = open(self.path + "../../" + filename, "w");
         # Whetstone num_neurons num_synapses inputs outputs
-        f.write("Whetstone %d %d %d %d\n" % (self.num_neurons(), self.num_synapses(), len(self.neurons[0]), len(self.neurons[-1])))
+        f.write("Whetstone %d %d %d\n" % (self.num_neurons(), len(self.neurons[0]), len(self.neurons[-1])))
 
         for i in range(len(self.neurons[0])):
             f.write(self.neurons[0][i].print_whetstone("I"))
@@ -385,21 +385,21 @@ class neuron():
 
 class synapse():
 
-    def __init__(self, pre_n, post_n, weight, id=0, refc=0):
+    def __init__(self, pre_n, post_n, weight, id=0, delay=1):
         self.pre_n = pre_n
         self.post_n = post_n
         self.weight = weight
-        self.refc = refc
+        self.delay = delay
         self.id = id
 
     def print_out(self, i):
         return "Synapse %2d: %19s [weights:%lf]\n" % (i, self.print_coord(), self.weight)
 
     def print_nida(self):
-        return "S %d %d %d %d %d %d %lf %lf\n" % (self.pre_n.x, self.pre_n.y, self.pre_n.z, self.post_n.x, self.post_n.y, self.post_n.z, self.weight, self.refc)
+        return "S %d %d %d %d %d %d %lf %lf\n" % (self.pre_n.x, self.pre_n.y, self.pre_n.z, self.post_n.x, self.post_n.y, self.post_n.z, self.weight, self.delay)
 
     def print_whetstone(self):
-        return "| S %d %f %f %d %d\n" % (self.id, self.weight, self.refc, self.pre_n.id, self.post_n.id)
+        return "| S %d %f %f %d %d\n" % (self.id, self.weight, self.delay, self.pre_n.id, self.post_n.id)
 
     def print_danna2(self):
         return "\tS %d %d %d 0\n" % (self.pre_n.x, self.pre_n.y-1, self.weight*1023)
