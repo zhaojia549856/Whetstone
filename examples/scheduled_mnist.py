@@ -76,6 +76,7 @@ model.compile(loss='categorical_crossentropy', optimizer=Adadelta(lr=4.0, rho=0.
 model.fit(x_train, y_train, epochs=77, callbacks=[scheduled])
 
 new_model = copy_remove_batchnorm(model)
+new_model.compile(loss='categorical_crossentropy', optimizer=Adadelta(lr=4.0, rho=0.95, epsilon=1e-8, decay=0.0), metrics=['accuracy'])
 # Test both the original and the "copy" and compare their accuracy.
 score = model.evaluate(x_test, y_test)[1]
 score_new = new_model.evaluate(x_test, y_test)[1]
