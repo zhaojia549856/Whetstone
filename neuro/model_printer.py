@@ -263,36 +263,20 @@ class neuro():
                 id += 1
         self.synapses.append(layer)
 
-## DELETE 
-    def print_1d_neuron_layer(self, layer, type="N"):
-        for y in range(len(layer)):
-            self.f.write(layer[y].print_nida(type))
-    
-    def print_2d_neuron_layer(self, layer, type="N"):
-        for z in range(len(layer[0][0])):  
-            for y in range(len(layer[0])):
-                for x in range(len(layer)):
-                    self.f.write(layer[x][y][z].print_nida(type))
-
-    def print_synapse_layer(self, layer):
-        for i in range(len(layer)):
-            self.f.write(layer[i].print_nida())
-## END DELETE
-
     def print_nida(self, filename="nida.net"):
         f = open(self.path + "../../" + filename, "w");
         f.write("# CONFIG\nDIMS %d %d %d\nGRAN 1\n\nEND-CONFIG\n# NETWORK\n" % (self.xy_size, self.xy_size, self.z_start))
-        self.f = f
         for neuron in self.neurons: 
-            self.print_1d_neuron_layer(neuron)
+            for y in range(len(layer)):
+                f.write(layer[y].print_nida("N"))
         for synapse in self.synapses:
-            self.print_synapse_layer(synapse)
-        
+            for i in range(len(synapse)):
+                f.write(layer[i].print_nida())
         for i in range(len(self.neurons[0])):
-            self.f.write(self.neurons[0][i].print_nida_IO("INPUT"))
+            f.write(self.neurons[0][i].print_nida_IO("INPUT"))
 
         for i in range(len(self.neurons[-1])):
-            self.f.write(self.neurons[-1][i].print_nida_IO("OUTPUT"))
+            f.write(self.neurons[-1][i].print_nida_IO("OUTPUT"))
         f.close()
 
     def print_whetstone(self, filename="whetstone.net"):
@@ -406,5 +390,6 @@ class synapse():
 
     def print_coord(self):
         return "%s->%s" % (self.pre_n.print_coord(), self.post_n.print_coord())
+
     def print_mrdanna(self):
         return "S %d %d %d %d %d %d %f 1\n" % (self.pre_n.x, self.pre_n.y, self.pre_n.z, self.post_n.x, self.post_n.y, self.post_n.z, self.weight)
