@@ -151,7 +151,6 @@ class neuro():
             print("load_first_layer error: Never seen first layer type %s" % str(type(layer)))
             exit(0)          
 
-#TODO: need to recheck the flatten process in loading function with this function
     def flatten(self, layer):
         if len(np.array(layer).shape) == 1: 
             return layer
@@ -169,9 +168,9 @@ class neuro():
         count = 0
         for layer in self.neurons:
             if len(np.array(layer).shape) != 1:
-                print("num_neurons error: layer dimension is not 1")
-                exit(0)
-            count += len(layer)
+                count += len(flatten(layer))
+            else: 
+                count += len(layer)
         return count
 
     def num_synapses(self):
