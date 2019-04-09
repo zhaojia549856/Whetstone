@@ -29,6 +29,8 @@ class neuro():
         self.z_start = 0
         self.id_start = 0 
 
+#TODO check for network that start with a dense layer
+#Should be public to all models
     def loading(self):
         self.load_config()
 
@@ -92,6 +94,7 @@ class neuro():
             if len(self.neurons[i]) > self.xy_size:
                 self.xy_size = len(self.neurons[i])
 
+#TODO: work with loading
     def construct_supply_file(self, layer):
         if type(layer) == keras.layers.Dense:
             print("first a dense layer")
@@ -148,6 +151,7 @@ class neuro():
             print("load_first_layer error: Never seen first layer type %s" % str(type(layer)))
             exit(0)          
 
+#TODO: need to recheck the flatten process in loading function with this function
     def flatten(self, layer):
         if len(np.array(layer).shape) == 1: 
             return layer
@@ -160,6 +164,7 @@ class neuro():
         layer = layer.tolist()
         return layer
 
+#Maybe don't exit() when the layer is not flat, try to just convert it to flat and count
     def num_neurons(self):
         count = 0
         for layer in self.neurons:
@@ -267,6 +272,7 @@ class neuro():
                 id += 1
         self.synapses.append(layer)
 
+#TODO: move this to its individual model
     def print_nida(self, filename="nida.net"):
         f = open(self.file_path + filename, "w");
         f.write("# CONFIG\nDIMS %d %d %d\nGRAN 1\n\nEND-CONFIG\n# NETWORK\n" % (self.xy_size, self.xy_size, self.z_start))
@@ -302,8 +308,7 @@ class neuro():
             for i in range(len(layer)):
                 f.write(layer[i].print_whetstone())
 
-
-    def print_danna2(self, filename):
+    def print_danna2(self, filename="danna2.txt"):
         syn_t = len(self.neurons[0]) * len(self.neurons[1])
         f = open(filename, "w");
         f.write("# MODEL DANNA2\nVersion: 0.1\nw %d h %d l 0 s 0\n" % (self.x_size-1, self.y_size))
@@ -332,6 +337,7 @@ class neuro():
         f.write("".join(self.neurons[1][i].print_mrdanna_input(i) for i in range(len(self.neurons[1]))))
         f.write("".join(self.neurons[-1][i].print_mrdanna_output(i) for i in range(len(self.neurons[-1]))))
 
+#TODO: move to its individual model
 class neuron():
 
     def __init__(self, x, y, threshold, id, z=0, refc=0.0):
