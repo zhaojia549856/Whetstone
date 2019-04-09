@@ -11,10 +11,15 @@ from keras.optimizers import Adadelta
 from os import sys
 
 class neuro():
-    def __init__(self, model, key, format, path):
+    def __init__(self, model, key, format, path=None, filename=None):
         self.model = model
         self.key = key
-        self.path = path
+        if path == None: 
+            self.file_path = "./"
+            self.supply = "./supply.txt"
+        else:
+            self.file_path = path + "../../"
+            self.supply = path + "./supply.txt"
         self.loading()
         self.print_whetstone()
 
@@ -93,7 +98,7 @@ class neuro():
 
             weights, thresholds = layer.get_weights()
             self.load_dense_neurons(0.5 - thresholds)
-            f = open(self.path + "supply.txt", "w")
+            f = open(self.supply, "w")
             f.write("Dense\n")
             f.write("KEY: \n")
             for i in range(len(self.key)):
@@ -117,7 +122,7 @@ class neuro():
             self.load_conv2d_neurons(0.5 - thresholds)
             
             #write first layer to supply file
-            f = open(self.path + "supply.txt", "w")
+            f = open(self.supply, "w")
             f.write("Conv2D\n")
 
             f.write("KEY: \n")
@@ -169,7 +174,6 @@ class neuro():
         for layer in self.synapses:
             count += len(layer)
         return count
-
 
     def load_conv2d_neurons(self, thresholds):
         layer = np.empty([self.last_layer_size[0], self.last_layer_size[1], len(thresholds)], dtype=type(neuron))
@@ -264,7 +268,7 @@ class neuro():
         self.synapses.append(layer)
 
     def print_nida(self, filename="nida.net"):
-        f = open(self.path + "../../" + filename, "w");
+        f = open(self.file_path + filename, "w");
         f.write("# CONFIG\nDIMS %d %d %d\nGRAN 1\n\nEND-CONFIG\n# NETWORK\n" % (self.xy_size, self.xy_size, self.z_start))
         for neuron in self.neurons: 
             for y in range(len(layer)):
@@ -280,7 +284,8 @@ class neuro():
         f.close()
 
     def print_whetstone(self, filename="whetstone.net"):
-        f = open(self.path + "../../" + filename, "w");
+        print(self.file_path + filename)
+        f = open(self.file_path + filename, "w");
         # Whetstone num_neurons num_synapses inputs outputs
         f.write("Whetstone %d %d %d\n" % (self.num_neurons(), len(self.neurons[0]), len(self.neurons[-1])))
 
