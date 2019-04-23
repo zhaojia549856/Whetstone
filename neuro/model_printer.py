@@ -27,11 +27,13 @@ class neuro():
         self.neurons = []; self.synapses = []
         self.input_size = list(self.model.layers[0].get_config()["batch_input_shape"][1:])
         self.z_start = 0
-        self.id_start = 0 
+        self.neuron_id = 0 
+        self.synapse_id = 0
 
 #TODO check for network that start with a dense layer
 #Should be public to all models
     def loading(self):
+
         self.load_config()
 
         model = self.model
@@ -163,7 +165,6 @@ class neuro():
         layer = layer.tolist()
         return layer
 
-#Maybe don't exit() when the layer is not flat, try to just convert it to flat and count
     def num_neurons(self):
         count = 0
         for layer in self.neurons:
@@ -185,21 +186,18 @@ class neuro():
             for y in range(self.last_layer_size[1]):
                 for z in range(len(thresholds)):
                     id = z*self.last_layer_size[1]*self.last_layer_size[0] + y*self.last_layer_size[0]+ x
-                    layer[x][y][z] = neuron(x, y, thresholds[z], id + self.id_start, self.z_start + z)
+                    layer[x][y][z] = neuron(x, y, thresholds[z], id + self.neuron_id, self.z_start + z)
         self.neurons.append(layer.tolist())
         self.z_start += len(thresholds)
-        self.id_start += id + 1
+        self.neuron_id += id + 1
 
     def load_conv2d_synapses(self, filters, kernel_size, weights):
         if kernel_size[0] % 2 == 0:
             print("Can't deal with even kernal size")
             exit(1)
-        layer = [] 
 
-        if len(self.synapses) == 0: 
-            id = 0
-        else: 
-            id = self.synapses[-1][-1].id + 1
+        layer = [] 
+        id = self.synapse_id
 
         for x2 in range(self.last_layer_size[0]):
             for y2 in range(self.last_layer_size[1]):
@@ -220,6 +218,7 @@ class neuro():
                                         print("Index in the network layer: (", x, y, self.z_start + z1 - self.last_layer_size[2], 
                                             ",", x2, y2, self.z_start + z2, ")")
                                         exit(1)
+        self.synapses_id = id
         self.synapses.append(layer)
         self.last_layer_size[2] = filters
 
@@ -231,14 +230,14 @@ class neuro():
                 layer[x].append([])
                 for z in range(layer_size[2]):
                     id = z*layer_size[1]*layer_size[0] + y*layer_size[0]+ x
-                    layer[x][y].append(neuron(x, y, 0.5, id + self.id_start, self.z_start + z))
+                    layer[x][y].append(neuron(x, y, 0.5, id + self.neuron_id, self.z_start + z))
         self.neurons.append(layer)
         self.z_start += layer_size[2]
-        self.id_start += id + 1
+        self.neuron_id += id + 1
 
     def load_maxpooling_synapses(self, kernal_x, kernal_y):
         layer = [] 
-        id = self.synapses[-1][-1].id + 1
+        id = self.synapse_id
 
         for z in range(self.last_layer_size[2]):
             for y in range(self.last_layer_size[1]):
@@ -249,27 +248,26 @@ class neuro():
                     except IndexError as e:
                         print(e)
         self.synapses.append(layer)
+        self.synapse_id = id
 
     def load_dense_neurons(self, thresholds):
         layer = []
         for i in range(len(thresholds)):
-            layer.append(neuron(0, i, thresholds[i], i + self.id_start, self.z_start))
+            layer.append(neuron(0, i, thresholds[i], i + self.neuron_id, self.z_start))
         self.neurons.append(layer)
         self.z_start += 1
-        self.id_start += i + 1
+        self.neuron_id += i + 1
 
     def load_dense_synapses(self, weights):
         layer = []
-        if len(self.synapses) == 0:
-            id = 0
-        else: 
-            id = self.synapses[-1][-1].id + 1
+        id = self.synapse_id
             
         for i in range(len(weights)):
             for j in range(len(weights[i])):
                 layer.append(synapse(self.neurons[-2][i], self.neurons[-1][j], weights[i][j], id))
                 id += 1
         self.synapses.append(layer)
+        self.synapse_id = id
 
 #TODO: move this to its individual model
     def print_nida(self, filename="nida.net"):
