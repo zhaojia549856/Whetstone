@@ -218,7 +218,7 @@ class neuro():
                                         print("Index in the network layer: (", x, y, self.z_start + z1 - self.last_layer_size[2], 
                                             ",", x2, y2, self.z_start + z2, ")")
                                         exit(1)
-        self.synapses_id = id
+        self.synapse_id = id
         self.synapses.append(layer)
         self.last_layer_size[2] = filters
 
