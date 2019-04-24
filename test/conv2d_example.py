@@ -27,6 +27,14 @@ def print_entry(entry):
 def classify(entry):
 	return int(sum(entry)/len(entry) > 0.5)
 
+def testValueLayer(model, layer_index, data):
+	print(model.layers[layer_index].name)
+	print(data)
+	intermediate_layer_model = Model(input=model.input, output=model.layers[layer_index].output)
+	intermediate_output = intermediate_layer_model.predict(data)
+	print(model.layers[layer_index].get_weights())
+	print(intermediate_output)
+
 numClasses = 2
 num_problem, num_testing = 10000, 10
 img_rows, img_cols = 4, 4
@@ -50,8 +58,8 @@ input_shape = (img_rows, img_cols, 1)
 
 
 f = open("data.txt", "w+")
-# for i in range(num_problem):
-# 	f.write("%s %d\n" % (print_entry(x_train[i]), y_train[i]))
+for i in range(num_problem):
+	f.write("%s %d\n" % (print_entry(x_train[i]), y_train[i]))
 for i in range(num_testing):
  	f.write("%s %d\n" % (print_entry(x_test[i]), y_test[i]))
 f.close()
@@ -89,7 +97,6 @@ model.add(Spiking_BRelu())
 model.add(Softmax_Decode(key))
 
 
-
 adaptive = AdaptiveSharpener(verbose=True, min_init_epochs=10)
 
 max_epochs = 100
@@ -98,7 +105,6 @@ model.compile(loss='categorical_crossentropy', optimizer=Adadelta(lr=4.0, rho=0.
 model.fit(x_train, y_train, batch_size=128, epochs=max_epochs, callbacks=[adaptive])
 
 
-# new_model = copy_remove_batchnorm(model)
 new_model = copy_remove_batchnorm(model)
 
 
@@ -107,13 +113,8 @@ score = model.evaluate(x_test, y_test)[1]
 new_model.compile(loss='categorical_crossentropy', optimizer=Adadelta(lr=4.0, rho=0.95, epsilon=1e-8, decay=0.0), metrics=['accuracy'])
 score_new = new_model.evaluate(x_test, y_test)[1]
 
-
-print(new_model.layers[1].name)
-intermediate_layer_model = Model(input=new_model.input, output=new_model.layers[-1].output)
-intermediate_output = intermediate_layer_model.predict(x_train[0].reshape(1,4,4,1))
-# print(x_train[2])
-# print(new_model.layers[0].get_weights())
-print(intermediate_output)
+# code for test layer output!!
+testValueLayer(new_model, 1, test[0].reshape(1,4,4,1))
 
 
 print('score with batchnorm           =', score)
@@ -121,10 +122,6 @@ print('score after removing batchnorm =', score_new)
 print('They should be the same.')
 
 neuro(new_model, key, "nida")
-
-# predict = new_model.predict(x_train)
-# print(x_train[0])
-# print(predict[0])
 
 
 
