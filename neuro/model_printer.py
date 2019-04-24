@@ -78,10 +78,6 @@ class neuro():
             elif type(layer) == keras.layers.Dense:
                 print("keras.layers.Dense")
                 
-                if self.last_layer_size[1] != None or self.last_layer_size[2] != None:
-                    print("Dense Error: Last layer is not a one dimensional layer.")
-                    exit(1)
-
                 weights, thresholds = layer.get_weights()
 
                 self.load_dense_neurons(0.5 - thresholds)
@@ -111,9 +107,13 @@ class neuro():
                 f.write("\n")
 
             f.write("L1: \n")
-            for i in weights:
-                f.write(" ".join(str(j) for j in i))
-                f.write("\n")
+
+            for i in range(len(weights[0])):
+                entry = str(i) + " "
+                for j in range(len(weights)):
+                    entry += "%d:%lf " % (j, weights[j][i])
+                f.write(entry + "\n")
+            f.close()
 
         elif type(layer) == keras.layers.Conv2D:
             print("first a conv2d layer")
