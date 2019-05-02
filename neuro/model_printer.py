@@ -14,7 +14,7 @@ class neuro():
     def __init__(self, model, key, format, path=None, filename=None):
         self.model = model
         self.key = key
-        if path == None: 
+        if path == None:
             self.file_path = "./"
             self.supply = "./supply.txt"
         else:
@@ -58,22 +58,18 @@ class neuro():
             elif type(layer) == keras.layers.MaxPooling2D:
                 print("keras.layer.MaxPooling2D")
                 (x, y) = layer.get_config()["pool_size"] 
-                layer_size = [self.last_layer_size[0]/x, self.last_layer_size[1]/y, self.last_layer_size[2]]
+                self.last_layer_size = [self.last_layer_size[0]/x, self.last_layer_size[1]/y, self.last_layer_size[2]]
                 
                 #loading neuron + add z_start
-                self.load_maxpooling_neurons(layer_size)
+                self.load_maxpooling_neurons()
 
                 #update to current size
                 self.load_maxpooling_synapses(x, y)
 
-                self.last_layer_size = layer_size
-
             elif type(layer) == keras.layers.Flatten:
-                #TODO:  The order of flatten? Might need to change some implementation that I had previously.
-                #       The x, y, z coord order
                 print("keras.layer.Flatten")
                 self.neurons[-1] = self.flatten(self.neurons[-1])
-                self.last_layer_size = [self.neurons[-1], None, None] #TODO notification? 
+                self.last_layer_size = [self.neurons[-1], None, None]
 
             elif type(layer) == keras.layers.Dense:
                 print("keras.layers.Dense")
@@ -86,13 +82,13 @@ class neuro():
             elif type(layer) == keras.layers.normalization.BatchNormalization:
                 print("ERROR: Can't handle BatchNormalization layer")
 
+        # flat neuron layer for printing 
         self.xy_size = 0
         for i in range(len(self.neurons)): 
             self.neurons[i] = self.flatten(self.neurons[i])
             if len(self.neurons[i]) > self.xy_size:
                 self.xy_size = len(self.neurons[i])
 
-#TODO: work with loading
     def construct_supply_file(self, layer):
         if type(layer) == keras.layers.Dense:
             print("first a dense layer")
@@ -107,7 +103,6 @@ class neuro():
                 f.write("\n")
 
             f.write("L1: \n")
-
             for i in range(len(weights[0])):
                 entry = str(i) + " "
                 for j in range(len(weights)):
@@ -222,17 +217,17 @@ class neuro():
         self.synapses.append(layer)
         self.last_layer_size[2] = filters
 
-    def load_maxpooling_neurons(self, layer_size):
+    def load_maxpooling_neurons(self):
         layer = []
-        for x in range(layer_size[0]):
+        for x in range(self.last_layer_size[0]):
             layer.append([])
-            for y in range(layer_size[1]):
+            for y in range(self.last_layer_size[1]):
                 layer[x].append([])
-                for z in range(layer_size[2]):
-                    id = z*layer_size[1]*layer_size[0] + y*layer_size[0]+ x
+                for z in range(self.last_layer_size[2]):
+                    id = z*self.last_layer_size[1]*self.last_layer_size[0] + y*self.last_layer_size[0]+ x
                     layer[x][y].append(neuron(x, y, 0.5, id + self.neuron_id, self.z_start + z))
         self.neurons.append(layer)
-        self.z_start += layer_size[2]
+        self.z_start += self.last_layer_size[2]
         self.neuron_id += id + 1
 
     def load_maxpooling_synapses(self, kernal_x, kernal_y):
