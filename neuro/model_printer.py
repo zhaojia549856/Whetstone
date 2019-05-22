@@ -233,10 +233,11 @@ class neuro():
     def load_maxpooling_synapses(self, kernal_x, kernal_y):
         layer = [] 
         id = self.synapse_id
+        print(self.last_layer_size)
 
         for z in range(self.last_layer_size[2]):
-            for y in range(self.last_layer_size[1]):
-                for x in range(self.last_layer_size[0]):
+            for y in range(self.last_layer_size[1]*kernal_y):
+                for x in range(self.last_layer_size[0]*kernal_x):
                     try:
                         layer.append(synapse(self.neurons[-2][x][y][z], self.neurons[-1][x/kernal_x][y/kernal_y][z], 1, id))
                         id += 1
