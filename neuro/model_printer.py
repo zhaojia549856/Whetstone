@@ -22,7 +22,8 @@ class neuro():
             self.supply = path + "./supply.txt"
         self.loading()
         # self.print_whetstone()
-        whetstone(self)
+        # whetstone(self)
+        nida(self)
 
     def load_config(self):
         self.neurons = []; self.synapses = []
@@ -266,7 +267,34 @@ class neuro():
 
 class nida():
     def __init__(self, neuro, filename="nida.net"):
-        self.neuro = neuro
+        self.print_model(neuro, filename)
+
+    def print_model(self, neuro, filename):
+        f = open(neuro.file_path + filename, "w")
+        f.write("# CONFIG\nDIMS %d %d %d\nGRAN 1\n\nEND-CONFIG\n# NETWORK\n" % (neuro.xy_size, neuro.xy_size, neuro.z_start))
+        for layer in neuro.neurons: 
+            for i in range(len(layer)):
+                f.write(self.print_neuron(layer[i],"N"))
+        for layer in neuro.synapses:
+            for i in range(len(layer)):
+                f.write(self.print_synapse(layer[i]))
+        for i in range(len(neuro.neurons[0])):
+            f.write(self.print_neuron_IO(neuro.neurons[0][i],"INPUT"))
+
+        for i in range(len(neuro.neurons[-1])):
+            f.write(self.print_neuron_IO(neuro.neurons[-1][i],"OUTPUT"))
+        f.close()      
+    
+    def print_neuron(self, neuron, type):
+        return "%s %d %d %d %lf %lf\n" % (type, neuron.x, neuron.y, neuron.z, neuron.threshold, neuron.refc)
+
+    def print_neuron_IO(self, neuron, type):
+        return "%s %d %d %d %d\n" % (type, neuron.id, neuron.x, neuron.y, neuron.z)
+
+    def print_synapse(self, synapse):
+        return "S %d %d %d %d %d %d %lf %lf\n" % (synapse.pre_n.x, synapse.pre_n.y, synapse.pre_n.z, synapse.post_n.x, synapse.post_n.y, synapse.post_n.z, synapse.weight, synapse.delay)
+
+
 
 class mrdanna():
     def __init__(self, neuro, filename="mrdanna.net"):
