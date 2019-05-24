@@ -444,26 +444,26 @@ class neuron():
     def append_pre_synapse(self, synapse):
         self.pre_syn.append(synapse)
 
-    def print_out(self, i, type):
-        return "%-6s Neuron %2d: %10s [threshold:%lf]\n" % (type, i, self.print_coord(), self.threshold)
+    # def print_out(self, i, type):
+    #     return "%-6s Neuron %2d: %10s [threshold:%lf]\n" % (type, i, self.print_coord(), self.threshold)
 
     # def print_nida(self, type):
     #     return "%s %d %d %d %lf %lf\n" % (type, self.x, self.y, self.z, self.threshold, self.refc)
 
-    def print_nida_IO(self, type):
-        return "%s %d %d %d %d\n" % (type, self.id, self.x, self.y, self.z)
+    # def print_nida_IO(self, type):
+    #     return "%s %d %d %d %d\n" % (type, self.id, self.x, self.y, self.z)
 
-    def print_nida_output(self, type):
-        return "%s %d %d %d 0\n" % (type, self.x, self.x, self.y)
+    # def print_nida_output(self, type):
+    #     return "%s %d %d %d 0\n" % (type, self.x, self.x, self.y)
 
     # def print_whetstone(self, type):
     #     return "+ %s %d %f %d %d %d\n" % (type, self.id, self.threshold, self.x, self.y, self.z)
 
-    def print_danna2(self):
-        return "N %d %d %d 0\n" % (self.x, self.y-1, self.threshold*1023)
+    # def print_danna2(self):
+    #     return "N %d %d %d 0\n" % (self.x, self.y-1, self.threshold*1023)
 
-    def print_coord(self):
-        return "%d|%d" % (self.x, self.y)
+    # def print_coord(self):
+    #     return "%d|%d" % (self.x, self.y)
 
 class synapse():
 
@@ -474,8 +474,8 @@ class synapse():
         self.delay = delay
         self.id = id
 
-    def print_out(self, i):
-        return "Synapse %2d: %19s [weights:%lf]\n" % (i, self.print_coord(), self.weight)
+    # def print_out(self, i):
+    #     return "Synapse %2d: %19s [weights:%lf]\n" % (i, self.print_coord(), self.weight)
 
     # def print_nida(self):
     #     return "S %d %d %d %d %d %d %lf %lf\n" % (self.pre_n.x, self.pre_n.y, self.pre_n.z, self.post_n.x, self.post_n.y, self.post_n.z, self.weight, self.delay)
@@ -483,8 +483,8 @@ class synapse():
     # def print_whetstone(self):
     #     return "| S %d %f %f %d %d\n" % (self.id, self.weight, self.delay, self.pre_n.id, self.post_n.id)
 
-    def print_danna2(self):
-        return "\tS %d %d %d 0\n" % (self.pre_n.x, self.pre_n.y-1, self.weight*1023)
+    # def print_danna2(self):
+    #     return "\tS %d %d %d 0\n" % (self.pre_n.x, self.pre_n.y-1, self.weight*1023)
 
-    def print_coord(self):
-        return "%s->%s" % (self.pre_n.print_coord(), self.post_n.print_coord())
+    # def print_coord(self):
+    #     return "%s->%s" % (self.pre_n.print_coord(), self.post_n.print_coord())
