@@ -23,7 +23,8 @@ class neuro():
         self.loading()
         # self.print_whetstone()
         # whetstone(self)
-        nida(self)
+        # nida(self)
+        danna2(self)
 
     def load_config(self):
         self.neurons = []; self.synapses = []
@@ -205,7 +206,8 @@ class neuro():
                                 if x >= 0 and x < self.last_layer_size[0] and y >= 0 and y < self.last_layer_size[1]:
                                     try: 
                                         layer.append(synapse(self.neurons[-2][x][y][z1], 
-                                            self.neurons[-1][x2][y2][z2], weights[x1][y1][z1][z2], id)) 
+                                            self.neurons[-1][x2][y2][z2], weights[x1][y1][z1][z2], id))
+                                        self.neurons[-1][x2][y2][z2].append_pre_synapse(layer[-1])
                                         id += 1
                                     except IndexError as e:
                                         print(e)
@@ -240,6 +242,7 @@ class neuro():
                 for x in range(self.last_layer_size[0]*kernal_x):
                     try:
                         layer.append(synapse(self.neurons[-2][x][y][z], self.neurons[-1][x/kernal_x][y/kernal_y][z], 1, id))
+                        self.neurons[-1][x/kernal_x][y/kernal_y][z].append_pre_synapse(layer[-1])
                         id += 1
                     except IndexError as e:
                         print(e)
@@ -261,9 +264,11 @@ class neuro():
         for i in range(len(weights)):
             for j in range(len(weights[i])):
                 layer.append(synapse(self.neurons[-2][i], self.neurons[-1][j], weights[i][j], id))
+                self.neurons[-1][j].append_pre_synapse(layer[-1])
                 id += 1
         self.synapses.append(layer)
         self.synapse_id = id
+
 
 class nida():
     def __init__(self, neuro, filename="nida.net"):
@@ -294,8 +299,7 @@ class nida():
     def print_synapse(self, synapse):
         return "S %d %d %d %d %d %d %lf %lf\n" % (synapse.pre_n.x, synapse.pre_n.y, synapse.pre_n.z, synapse.post_n.x, synapse.post_n.y, synapse.post_n.z, synapse.weight, synapse.delay)
 
-
-
+#waiting on Nick
 class mrdanna():
     def __init__(self, neuro, filename="mrdanna.net"):
         self.neuro = neuro
@@ -303,6 +307,36 @@ class mrdanna():
 class danna2():
     def __init__(self, neuro, filename="danna2.net"):
         self.neuro = neuro
+        self.print_model(neuro, filename)
+
+    def print_model(self, neuro, filename):
+        f = open(neuro.file_path + filename, "w")
+        print(neuro.file_path + filename)
+        f.write("# MODEL DANNA2\nVersion: 0.1\nw %d h %d l 0 s 0\n" % (neuro.xy_size, neuro.xy_size))
+
+        for i in range(len(neuro.neurons)):
+            for j in range(len(neuro.neurons[i])):
+                f.write(self.print_neuron(neuro.neurons[i][j]))
+                for s in neuro.neurons[i][j].pre_syn:
+                    f.write(self.print_synapse(s))
+
+        for i in range(len(neuro.neurons[0])):
+            f.write(self.print_I(neuro.neurons[0][i]))
+
+        for i in range(len(neuro.neurons[-1])):
+            f.write(self.print_O(neuro.neurons[-1][i], i))
+
+    def print_neuron(self, neuron):
+        return "N %d %d %d 0\n" % (neuron.x+neuron.z*self.neuro.xy_size, neuron.y, neuron.threshold*1023)
+
+    def print_synapse(self, synapse):
+        return "\tS %d %d %d 0\n" % (synapse.pre_n.x+synapse.pre_n.z*self.neuro.xy_size, synapse.pre_n.y, synapse.weight*1023)
+
+    def print_I(self, neuron):
+        return "I %d %d %d\n" % (neuron.id, neuron.x+neuron.z*self.neuro.xy_size, neuron.y)
+
+    def print_O(self, neuron, id):
+        return "O %d %d %d\n" % (id, neuron.x+neuron.z*self.neuro.xy_size, neuron.y)
 
 class whetstone():
     def __init__(self, neuro, filename="whetstone.net"):
@@ -336,21 +370,21 @@ class whetstone():
 
 
 #TODO: move this to its individual model
-    def print_nida(self, filename="nida.net"):
-        f = open(self.file_path + filename, "w");
-        f.write("# CONFIG\nDIMS %d %d %d\nGRAN 1\n\nEND-CONFIG\n# NETWORK\n" % (self.xy_size, self.xy_size, self.z_start))
-        for neuron in self.neurons: 
-            for y in range(len(layer)):
-                f.write(layer[y].print_nida("N"))
-        for synapse in self.synapses:
-            for i in range(len(synapse)):
-                f.write(layer[i].print_nida())
-        for i in range(len(self.neurons[0])):
-            f.write(self.neurons[0][i].print_nida_IO("INPUT"))
+    # def print_nida(self, filename="nida.net"):
+    #     f = open(self.file_path + filename, "w");
+    #     f.write("# CONFIG\nDIMS %d %d %d\nGRAN 1\n\nEND-CONFIG\n# NETWORK\n" % (self.xy_size, self.xy_size, self.z_start))
+    #     for neuron in self.neurons: 
+    #         for y in range(len(layer)):
+    #             f.write(layer[y].print_nida("N"))
+    #     for synapse in self.synapses:
+    #         for i in range(len(synapse)):
+    #             f.write(layer[i].print_nida())
+    #     for i in range(len(self.neurons[0])):
+    #         f.write(self.neurons[0][i].print_nida_IO("INPUT"))
 
-        for i in range(len(self.neurons[-1])):
-            f.write(self.neurons[-1][i].print_nida_IO("OUTPUT"))
-        f.close()
+    #     for i in range(len(self.neurons[-1])):
+    #         f.write(self.neurons[-1][i].print_nida_IO("OUTPUT"))
+    #     f.close()
 
     # def print_whetstone(self, filename="whetstone.net"):
     #     print(self.file_path + filename)
@@ -371,34 +405,29 @@ class whetstone():
     #         for i in range(len(layer)):
     #             f.write(layer[i].print_whetstone())
 
-    def print_danna2(self, filename="danna2.txt"):
-        syn_t = len(self.neurons[0]) * len(self.neurons[1])
-        f = open(filename, "w");
-        f.write("# MODEL DANNA2\nVersion: 0.1\nw %d h %d l 0 s 0\n" % (self.x_size-1, self.y_size))
+    # def print_danna2(self, filename="danna2.txt"):
+    #     syn_t = len(self.neurons[0]) * len(self.neurons[1])
+    #     f = open(filename, "w");
+    #     f.write("# MODEL DANNA2\nVersion: 0.1\nw %d h %d l 0 s 0\n" % (self.xy_size, self.xy_size))
 
-        # f.write("".join(self.neurons[0][i].print_danna2() for i in range(len(self.neurons[0]))))
-        f.write("".join(self.neurons[1][i].print_danna2() for i in range(len(self.neurons[1]))))
+    #     for i in range(len(self.neurons)):
+    #         for j in range(len(self.neurons[i])):
+    #             f.write(self.neuron[i][j])
 
-        for i in range(2, len(self.neurons)):
-            for j in range(len(self.neurons[i])):
-                f.write(self.neurons[i][j].print_danna2())
-                f.write("".join(s.print_danna2() for s in self.synapses[syn_t:syn_t+len(self.neurons[i-1])]))
-                syn_t += len(self.neurons[i-1])
-        f.write("".join("I %d %d %d\n" % (i, i, 0) for i in range(len(self.neurons[1]))))
-        f.write("".join("O %d %d %d\n" % (i, i, len(self.neurons)-2) for i in range(len(self.neurons[-1]))))
+    #     for i in range(2, len(self.neurons)):
+    #         for j in range(len(self.neurons[i])):
+    #             f.write(self.neurons[i][j].print_danna2())
+    #             f.write("".join(s.print_danna2() for s in self.synapses[syn_t:syn_t+len(self.neurons[i-1])]))
+    #             syn_t += len(self.neurons[i-1])
+    #     f.write("".join("I %d %d %d\n" % (i, i, 0) for i in range(len(self.neurons[1]))))
+    #     f.write("".join("O %d %d %d\n" % (i, i, len(self.neurons)) for i in range(len(self.neurons[-1]))))
 
-    def print_mrdanna(self, filename="mrdanna.txt"):
-        f = open(filename, "w")
-        f.write("# MODEL Mrdanna\n# CONFIG\nDIMS %d %d %d\nGRAN 1\n\n# NETWORK\n" % (1000, 1000, 1000)) #TODO
+    # def print_neuron(self, neuron):
+    #     return "N %d %d %d 0\n" % (self.x, self.y, self.threshold*1023)
 
-        for i in range(1, len(self.neurons)):
-            for j in range(len(self.neurons[i])):
-                f.write(self.neurons[i][j].print_mrdanna())
+    # def print_synapse(self, synapse):
+    #     return "\tS %d %d %d 0\n" % (self.pre_n.x, self.pre_n.y, self.weight*1023)
 
-        f.write("".join(self.synapses[i].print_mrdanna() for i in range(len(self.neurons[0]) * len(self.neurons[1]), len(self.synapses))))
-
-        f.write("".join(self.neurons[1][i].print_mrdanna_input(i) for i in range(len(self.neurons[1]))))
-        f.write("".join(self.neurons[-1][i].print_mrdanna_output(i) for i in range(len(self.neurons[-1]))))
 
 #TODO: move to its individual model
 class neuron():
@@ -410,12 +439,16 @@ class neuron():
         self.threshold = threshold
         self.refc = refc
         self.id = id
+        self.pre_syn = []
+
+    def append_pre_synapse(self, synapse):
+        self.pre_syn.append(synapse)
 
     def print_out(self, i, type):
         return "%-6s Neuron %2d: %10s [threshold:%lf]\n" % (type, i, self.print_coord(), self.threshold)
 
-    def print_nida(self, type):
-        return "%s %d %d %d %lf %lf\n" % (type, self.x, self.y, self.z, self.threshold, self.refc)
+    # def print_nida(self, type):
+    #     return "%s %d %d %d %lf %lf\n" % (type, self.x, self.y, self.z, self.threshold, self.refc)
 
     def print_nida_IO(self, type):
         return "%s %d %d %d %d\n" % (type, self.id, self.x, self.y, self.z)
@@ -432,15 +465,6 @@ class neuron():
     def print_coord(self):
         return "%d|%d" % (self.x, self.y)
 
-    def print_mrdanna(self):
-        return "N %d %d %d %f 0\n" % (self.x, self.y, self.z, self.threshold) 
-
-    def print_mrdanna_input(self, i):
-        return "INPUT %d %d %d %d\n" % (i, self.x, self.y, self.z)
-
-    def print_mrdanna_output(self, i):
-        return "OUTPUT %d %d %d %d\n" % (i, self.x, self.y, self.z)
-
 class synapse():
 
     def __init__(self, pre_n, post_n, weight, id=0, delay=1):
@@ -453,8 +477,8 @@ class synapse():
     def print_out(self, i):
         return "Synapse %2d: %19s [weights:%lf]\n" % (i, self.print_coord(), self.weight)
 
-    def print_nida(self):
-        return "S %d %d %d %d %d %d %lf %lf\n" % (self.pre_n.x, self.pre_n.y, self.pre_n.z, self.post_n.x, self.post_n.y, self.post_n.z, self.weight, self.delay)
+    # def print_nida(self):
+    #     return "S %d %d %d %d %d %d %lf %lf\n" % (self.pre_n.x, self.pre_n.y, self.pre_n.z, self.post_n.x, self.post_n.y, self.post_n.z, self.weight, self.delay)
 
     # def print_whetstone(self):
     #     return "| S %d %f %f %d %d\n" % (self.id, self.weight, self.delay, self.pre_n.id, self.post_n.id)
@@ -464,6 +488,3 @@ class synapse():
 
     def print_coord(self):
         return "%s->%s" % (self.pre_n.print_coord(), self.post_n.print_coord())
-
-    def print_mrdanna(self):
-        return "S %d %d %d %d %d %d %f 1\n" % (self.pre_n.x, self.pre_n.y, self.pre_n.z, self.post_n.x, self.post_n.y, self.post_n.z, self.weight)
