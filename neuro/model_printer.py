@@ -21,10 +21,16 @@ class neuro():
             self.file_path = path + "../../"
             self.supply = path + "./supply.txt"
         self.loading()
-        # self.print_whetstone()
-        # whetstone(self)
-        # nida(self)
-        danna2(self)
+
+        if format == "danna2":
+            danna2(self)
+        elif format == "whetstone":
+            whetstone(self)
+        elif format == "nida":
+            print("Using Nida model (useless model)")
+            nida(self)
+        else: 
+            print("Invalid model")
 
     def load_config(self):
         self.neurons = []; self.synapses = []
