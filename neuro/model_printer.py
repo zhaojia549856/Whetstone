@@ -387,7 +387,6 @@ class neuro():
         x1, y1, z1 = coords[1]
         cancel_synapses = []
 
-        #TODO: remember to add one incase of segfault
         B0 = neuron(x0, y0, DEFAULT_THRESHOLD, self.neuron_id, z0) 
         B1 = neuron(x1, y1, i, self.neuron_id+1, z1)
         self.neurons[-1].append(B0)
@@ -443,7 +442,8 @@ class neuro():
             #reset PB
             self.neuron_id = n_id
             self.synapse_id = s_id
-            self.PB(inter, d, self.init_neuron, B0, thresholds[i]+1, [(1, i, self.z_start), (2, i, self.z_start)], [self.synapses[-1][-1]])
+            #TODO need to change 10 to the largest weight possible for reset 
+            self.PB(inter, d, self.init_neuron, B0, thresholds[i]+10, [(1, i, self.z_start), (2, i, self.z_start)], [self.synapses[-1][-1]])
 
             # for y in range(n[1]):
             #     for x in range(n[0]): 
