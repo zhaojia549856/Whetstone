@@ -12,7 +12,7 @@ from os import sys
 import math
 
 DEFAULT_WEIGHT = 1
-DEFAULT_THRESHOLD = 0.5
+DEFAULT_THRESHOLD = 1
 
 class neuro():
     def __init__(self, model, key, format, path=None, filename=None):
@@ -165,7 +165,7 @@ class neuro():
         count = 0
         for layer in self.neurons:
             if len(np.array(layer).shape) != 1:
-                count += len(flatten(layer))
+                count += len(self.flatten(layer))
             else: 
                 count += len(layer)
         return count
@@ -290,6 +290,8 @@ class neuro():
 
         self.PA(self.last_layer_size, kernel_size, 2, 2)
 
+        self.PC(self.last_layer_size, weights, 0.5 - thresholds, 2, 2)
+
 
 
     def Init(self):
@@ -334,7 +336,7 @@ class neuro():
 
         self.neurons.append(neurons)
         self.neuron_id = n_id
-        self.z_start += z 
+        self.z_start += n[2]
 
 
         #input synapses
@@ -380,24 +382,106 @@ class neuro():
         self.synapses.append(synapses)
         self.synapse_id = s_id 
 
-        #TESTING
+    def PB(self, i, d, pre_neuron, post_neuron, weight, coords, output_synapses=None): 
+        x0, y0, z0 = coords[0]
+        x1, y1, z1 = coords[1]
+        cancel_synapses = []
 
+        #TODO: remember to add one incase of segfault
+        B0 = neuron(x0, y0, DEFAULT_THRESHOLD, self.neuron_id, z0) 
+        B1 = neuron(x1, y1, i, self.neuron_id+1, z1)
+        self.neurons[-1].append(B0)
+        self.neurons[-1].append(B1)
+        self.neuron_id += 2
+
+        S1 = synapse(pre_neuron, B0, DEFAULT_WEIGHT, self.synapse_id, delay=d-1)
+        S2 = synapse(B0, B0, DEFAULT_WEIGHT, self.synapse_id+1, delay=1) 
+        S3 = synapse(B0, B1, DEFAULT_WEIGHT, self.synapse_id+2, delay=1)
+        S4 = synapse(B1, post_neuron, weight, self.synapse_id+3, delay=1) #reset neuron should have weight be infinite
+
+        self.synapses[-1].append(S1)
+        self.synapses[-1].append(S2)
+        self.synapses[-1].append(S3)
+        self.synapses[-1].append(S4)
+        self.synapse_id += 4
+
+        if output_synapses != None:
+            s_id = self.synapse_id
+            for s in output_synapses:
+                self.synapses[-1].append(synapse(B1, s.post_n, s.weight * -1, s_id, delay=s.delay+1))
+                s_id += 1
+            self.synapse_id = s_id
+
+    def PC(self, n, weights, thresholds, inter, d):
+        c1_neurons = np.empty((n[0], n[1], len(thresholds)))
+        c2_neurons = np.empty((n[0], n[1], len(thresholds)))
+
+        last_layer_neurons = self.neurons[-1]
+        self.neurons.append([])
+        self.synapses.append([])
+
+
+        for i in range(len(thresholds)): 
+            n_id = self.neuron_id
+            s_id = self.synapse_id
+            B0 = neuron(0, i, thresholds[i], n_id, self.z_start)
+
+            for x in range(len(last_layer_neurons)):
+                for y in range(len(last_layer_neurons[x])):
+                    for z in range(len(last_layer_neurons[x][y])): 
+                        self.synapses[-1].append(synapse(last_layer_neurons[x][y][z], B0, weights[x][y][z][i], s_id, delay=1))
+                        s_id += 1
+
+            B1 = neuron(0, i, DEFAULT_THRESHOLD, n_id+1, self.z_start+1)
+            self.neurons[-1].append(B0)
+            self.neurons[-1].append(B1)
+            n_id += 2 
+
+            self.synapses[-1].append(synapse(B0, B1, DEFAULT_WEIGHT, s_id, delay=1))
+            s_id += 1
+
+            #reset PB
+            self.neuron_id = n_id
+            self.synapse_id = s_id
+            self.PB(inter, d, self.init_neuron, B0, thresholds[i]+1, [(1, i, self.z_start), (2, i, self.z_start)], [self.synapses[-1][-1]])
+
+            # for y in range(n[1]):
+            #     for x in range(n[0]): 
+            #         c1_neurons[x][y][i] = neuron(x, y, DEFAULT_THRESHOLD*2, n_id, self.z_start + 2 + i)
+            #         c2_neurons[x][y][i] = neuron(x, y, DEFAULT_THRESHOLD, n_id, self.z_start + 2 + len(thresholds) + i)
+
+            #         self.synapses[-1].append(synapse(B1, c1_neurons[x][y][i], DEFAULT_THRESHOLD, s_id, delay=1))
+            #         self.synapses[-1].append(synapse(c1_neurons[x][y][z], c2_neurons[x][y][z], DEFAULT_THRESHOLD, s_id+1 delay=n[1]*n[0]*i-(y*n[0]+x)*i))
+
+            #         PB(inter, d+2, self.init_neuron, c1_neurons[x][y][i], DEFAULT_THRESHOLD*2, [(1, i, self.z_start+1), (2, i, self.z_start+1)], self.synapses[-1][-1])
+            #         self.synapses[-1].append(synapse(self.init_neuron, c1_neurons[x][y][i], DEFAULT_THRESHOLD, s_id+2, delay=d+inter*(i+1)+1))
+
+
+
+        #TESTING
         f = open("test.net", "w");
         # Whetstone num_neurons num_synapses inputs outputs
         #   IMPORTANT
-        f.write("Whetstone %d %d %d\n" % (n[0]*n[1]*n[2] + w[0]*w[1]*n[2] + 1, n[0]*n[1]*n[2], w[0]*w[1]*n[2]))
+        f.write("Whetstone %d %d %d\n" % (self.num_neurons(), self.last_layer_size[0]*self.last_layer_size[1]*self.last_layer_size[2], len(self.neurons[-1])))
+        for z in range(self.last_layer_size[2]):
+            for y in range(self.last_layer_size[1]):
+                for x in range(self.last_layer_size[0]):
+                    f.write(self.neurons[0][x][y][z].print_neuron("I"))
 
-        for z in range(n[2]):
-            for y in range(n[1]):
-                for x in range(n[0]):
-                    f.write(last_layer_neurons[x][y][z].print_neuron("I"))
+        f.write(self.neurons[1][0][0][0].print_neuron("H"))
 
-        f.write(self.init_neuron.print_neuron("H"))
+        for x in range(len(self.neurons[2])):
+            for y in range(len(self.neurons[2][x])):
+                for z in range(len(self.neurons[2][x][y])):
+                    f.write(self.neurons[2][x][y][z].print_neuron("H"))
 
-        for z in range(n[2]):
-            for y in range(w[1]):
-                for x in range(w[0]):
-                    f.write(neurons[x][y][z].print_neuron("O"))
+        for i in range(len(self.neurons[3])):
+            f.write(self.neurons[3][i].print_neuron("O"))
+
+        # for z in range(n[2]):
+        #     for y in range(w[1]):
+        #         for x in range(w[0]):
+        #             f.write(neurons[x][y][z].print_neuron("O"))
 
 
         for i in range(len(self.synapses)):
@@ -407,41 +491,15 @@ class neuro():
 
 
 
-    # def PB(self, i, d, w, pre_neuron, post_neuron, output_synapses=None, coords): 
-    #     x0, y0, z0 = coords[0]
-    #     x1, y1, z1 = coords[1]
-    #     cancel_synapses = []
 
-    #     #TODO: remember to add one incase of segfault
-    #     B0 = neuron(x0, y0, 1, self.neuron_id, z) 
-    #     B1 = neuron(x1, y1, i, self.neuron_id+1, z)
-    #     self.neuron_id += 2
 
-    #     S1 = synapse(pre_neuron, B0, 1, self.synapse_id, delay=d)
-    #     S2 = synapse(B0, B0, 1, self.synapse_id+1, delay=1) 
-    #     S3 = synapse(B0, B1, 1, self.synapse_id+2, delay=1)
-    #     S4 = synapse(B1, post_neuron, w, self.synapse_id+3, delay=1) #reset neuron should have weight be infinite
-    #     self.synapse_id += 4
 
-    #     if output_synapses != None:
-    #         id = self.synapse_id
-    #         for s in output_synapses:
-    #             cancel_synapses.append(synapse(B1, s.post_n, s.weight * -1, id, delay=s.delay))
-    #             id += 1
 
-    # def PD(self, n, w, weights, threshold, w, i, d):
-    #     neurons = [] 
-    #     synapses = []
-    #     last_layer_neurons = self.neurons[-1] 
 
-    #     central = neuron(0, 0, threshold * n[0] * n[1] * n[2], self.neuron_id, z=self.z_start)
 
-    #     synapse_id = self.synapse_id 
-    #     for z in range(w[2]): 
-    #         for y in range(w[1]): 
-    #             for x in range(w[0]): 
-    #                 synapses.append(last_layer_neurons[x][y][z], central, weight[x][y][z], synapse_id)
-    #                 synapse_id += 1
+        #I think 
+        self.z_start += 4 
+
 
 
 
