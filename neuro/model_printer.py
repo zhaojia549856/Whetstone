@@ -298,7 +298,7 @@ class neuro():
         synapses = []
 
         s_id = self.synapse_id
-        inputs = self.neurons[0]      
+        inputs = self.neurons[-1]      
         
         # create init neuron 
         self.init_neuron = neuron(0, 0, DEFAULT_THRESHOLD, self.neuron_id, self.z_start)
