@@ -292,7 +292,7 @@ class neuro():
 
         self.PC(self.last_layer_size, weights, 0.5 - thresholds, 2, 2)
 
-
+        self.last_layer_size[2] = filters
 
     def Init(self):
         synapses = []
@@ -412,8 +412,8 @@ class neuro():
             self.synapse_id = s_id
 
     def PC(self, n, weights, thresholds, inter, d):
-        c1_neurons = np.empty((n[0], n[1], len(thresholds)))
-        c2_neurons = np.empty((n[0], n[1], len(thresholds)))
+        c1_neurons = np.empty((n[0], n[1], len(thresholds)), dtype=type(neuron))
+        c2_neurons = np.empty((n[0], n[1], len(thresholds)), dtype=type(neuron))
 
         last_layer_neurons = self.neurons[-1]
         self.neurons.append([])
@@ -445,68 +445,64 @@ class neuro():
             #TODO need to change 10 to the largest weight possible for reset 
             self.PB(inter, d, self.init_neuron, B0, thresholds[i]+10, [(1, i, self.z_start), (2, i, self.z_start)], [self.synapses[-1][-1]])
 
-            # for y in range(n[1]):
-            #     for x in range(n[0]): 
-            #         c1_neurons[x][y][i] = neuron(x, y, DEFAULT_THRESHOLD*2, n_id, self.z_start + 2 + i)
-            #         c2_neurons[x][y][i] = neuron(x, y, DEFAULT_THRESHOLD, n_id, self.z_start + 2 + len(thresholds) + i)
 
-            #         self.synapses[-1].append(synapse(B1, c1_neurons[x][y][i], DEFAULT_THRESHOLD, s_id, delay=1))
-            #         self.synapses[-1].append(synapse(c1_neurons[x][y][z], c2_neurons[x][y][z], DEFAULT_THRESHOLD, s_id+1 delay=n[1]*n[0]*i-(y*n[0]+x)*i))
+            for y in range(n[1]):
+                for x in range(n[0]): 
+                    # print(x, y, DEFAULT_THRESHOLD*2, self.neuron_id, self.z_start+2+i)
+                    c1_neurons[x][y][i] = neuron(x, y, DEFAULT_THRESHOLD*2, self.neuron_id, self.z_start + 2 + i)
+                    c2_neurons[x][y][i] = neuron(x, y, DEFAULT_THRESHOLD, self.neuron_id+1, self.z_start + 2 + len(thresholds) + i)
 
-            #         PB(inter, d+2, self.init_neuron, c1_neurons[x][y][i], DEFAULT_THRESHOLD*2, [(1, i, self.z_start+1), (2, i, self.z_start+1)], self.synapses[-1][-1])
-            #         self.synapses[-1].append(synapse(self.init_neuron, c1_neurons[x][y][i], DEFAULT_THRESHOLD, s_id+2, delay=d+inter*(i+1)+1))
+                    self.synapses[-1].append(synapse(B1, c1_neurons[x][y][i], DEFAULT_THRESHOLD, self.synapse_id, delay=1))
+                    self.synapses[-1].append(synapse(self.init_neuron, c1_neurons[x][y][i], DEFAULT_THRESHOLD, self.synapse_id+1, delay=d+3+(y*n[0]+x)*inter))
+                    self.synapses[-1].append(synapse(c1_neurons[x][y][i], c2_neurons[x][y][i], DEFAULT_THRESHOLD, self.synapse_id+2, delay=n[1]*n[0]*inter-(y*n[0]+x)*inter))
 
+                    self.neuron_id += 2 
+                    self.synapse_id += 3 
 
-
-        #TESTING
-        f = open("test.net", "w");
-        # Whetstone num_neurons num_synapses inputs outputs
-        #   IMPORTANT
-        f.write("Whetstone %d %d %d\n" % (self.num_neurons(), self.last_layer_size[0]*self.last_layer_size[1]*self.last_layer_size[2], len(self.neurons[-1])))
-        for z in range(self.last_layer_size[2]):
-            for y in range(self.last_layer_size[1]):
-                for x in range(self.last_layer_size[0]):
-                    f.write(self.neurons[0][x][y][z].print_neuron("I"))
-
-        f.write(self.neurons[1][0][0][0].print_neuron("H"))
-
-        for x in range(len(self.neurons[2])):
-            for y in range(len(self.neurons[2][x])):
-                for z in range(len(self.neurons[2][x][y])):
-                    f.write(self.neurons[2][x][y][z].print_neuron("H"))
-
-        for i in range(len(self.neurons[3])):
-            f.write(self.neurons[3][i].print_neuron("O"))
-
-        # for z in range(n[2]):
-        #     for y in range(w[1]):
-        #         for x in range(w[0]):
-        #             f.write(neurons[x][y][z].print_neuron("O"))
-
-
-        for i in range(len(self.synapses)):
-            for j in range(len(self.synapses[i])):
-                f.write(self.synapses[i][j].print_synapse())
+                    self.PB(inter, d+2, self.init_neuron, c1_neurons[x][y][i], DEFAULT_THRESHOLD*2, [(1 + (y*n[0]+x), i, self.z_start+1), (1 + n[0]*n[1] + (y*n[0]+x), i, self.z_start+1)], [self.synapses[-1][-1]])
 
 
 
+        self.neurons.append(c1_neurons)
+        self.neurons.append(c2_neurons)
+        self.z_start += 2 + len(thresholds) * 2
 
 
 
+        # #TESTING
+        # f = open("test.net", "w");
+        # # Whetstone num_neurons num_synapses inputs outputs
+        # #   IMPORTANT
+        # f.write("Whetstone %d %d %d\n" % (self.num_neurons(), self.last_layer_size[0]*self.last_layer_size[1]*self.last_layer_size[2], 100))
+        # for z in range(self.last_layer_size[2]):
+        #     for y in range(self.last_layer_size[1]):
+        #         for x in range(self.last_layer_size[0]):
+        #             f.write(self.neurons[0][x][y][z].print_neuron("I"))
+
+        # f.write(self.neurons[1][0][0][0].print_neuron("H"))
+
+        # for x in range(len(self.neurons[2])):
+        #     for y in range(len(self.neurons[2][x])):
+        #         for z in range(len(self.neurons[2][x][y])):
+        #             f.write(self.neurons[2][x][y][z].print_neuron("H"))
+
+        # for i in range(len(self.neurons[3])):
+        #     f.write(self.neurons[3][i].print_neuron("H"))
+
+        # for x in range(len(self.neurons[4])):
+        #     for y in range(len(self.neurons[4][x])):
+        #         for z in range(len(self.neurons[4][x][y])):
+        #             f.write(self.neurons[4][x][y][z].print_neuron("H"))
+
+        # for x in range(len(self.neurons[5])):
+        #     for y in range(len(self.neurons[5][x])):
+        #         for z in range(len(self.neurons[5][x][y])):
+        #             f.write(self.neurons[5][x][y][z].print_neuron("O"))
 
 
-
-
-        #I think 
-        self.z_start += 4 
-
-
-
-
-
-
-
-
+        # for i in range(len(self.synapses)):
+        #     for j in range(len(self.synapses[i])):
+        #         f.write(self.synapses[i][j].print_synapse())
 
 
 
