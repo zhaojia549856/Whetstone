@@ -11,7 +11,7 @@ from keras.utils import to_categorical
 from keras.layers import Dense, Conv2D, Reshape, Flatten, MaxPooling2D, BatchNormalization
 from keras.optimizers import Adadelta
 import keras.backend as K
-from whetstone.layers import Spiking_BRelu, Softmax_Decode, key_generator, Input_Spiking
+from whetstone.layers import Spiking_BRelu, Softmax_Decode, key_generator
 from whetstone.callbacks import AdaptiveSharpener
 from whetstone.utils import copy_remove_batchnorm
 from neuro.model_printer import neuro
