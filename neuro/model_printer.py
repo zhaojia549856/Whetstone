@@ -207,6 +207,7 @@ class neuro():
                                     try: 
                                         layer.append(synapse(self.neurons[-2][x][y][z1], 
                                             self.neurons[-1][x2][y2][z2], weights[x1][y1][z1][z2], id, delay=1))
+                                        # self.neurons[-1][x2][y2][z2].append_pre_synapse(layer[-1])
                                         id += 1
                                     except IndexError as e:
                                         print(e)
@@ -240,6 +241,7 @@ class neuro():
                     try:
                         #TODO: auto append_pre_synapse process
                         layer.append(synapse(self.neurons[-2][x][y][z], self.neurons[-1][x/kernal_x][y/kernal_y][z], 1, id, delay=1))
+                        # self.neurons[-1][x/kernal_x][y/kernal_y][z].append_pre_synapse(layer[-1])
                         id += 1
                     except IndexError as e:
                         print(e)
@@ -261,6 +263,7 @@ class neuro():
         for i in range(len(weights)):
             for j in range(len(weights[i])):
                 layer.append(synapse(self.neurons[-2][i], self.neurons[-1][j], weights[i][j], id, delay=1))
+                # self.neurons[-1][j].append_pre_synapse(layer[-1])
                 id += 1
         self.synapses.append(layer)
         self.synapse_id = id
@@ -384,6 +387,7 @@ class neuro():
         x0, y0, z0 = coords[0]
         x1, y1, z1 = coords[1]
         cancel_synapses = []
+        # print("i is ", i)
 
         B0 = neuron(x0, y0, DEFAULT_THRESHOLD, self.neuron_id, z0) 
         B1 = neuron(x1, y1, i, self.neuron_id+1, z1)
@@ -398,6 +402,7 @@ class neuro():
         if cycle == None: 
             print("cycle None")
             exit(1)
+        # print("add synapse delay",d, i, d+i*cycle)
         S5 = synapse(pre_neuron, B0, DEFAULT_WEIGHT * -1, self.synapse_id+4, delay=d+i*cycle)
  
         self.synapses[-1].append(S1)
@@ -435,6 +440,8 @@ class neuro():
                         #TODO: kernal size x < half
                         if x == len(last_layer_neurons)/2 - 1 :
                             #TODO weight
+                            # print(d, inter, len(last_layer_neurons))
+
                             self.PB(inter*n[0], d, self.init_neuron, last_layer_neurons[x][y][z], DEFAULT_THRESHOLD*100, [(len(last_layer_neurons), y, last_layer_neurons[x][y][z].z), (len(last_layer_neurons)+1, y, last_layer_neurons[x][y][z].z)],  [self.synapses[-1][-1]], n[0]-1)
             B1 = neuron(0, i, DEFAULT_THRESHOLD, self.neuron_id, self.z_start+1)
             self.neurons[-1].append(B0)
