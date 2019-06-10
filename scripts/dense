@@ -1,0 +1,23 @@
+#!/bin/sh
+
+count=1
+
+
+
+while [ $count != 2 ]; do
+	version=1
+	while [ $version != 4 ]; do 
+		python dense$version.py
+
+		mkdir dense$version_$count
+
+		mv supply.txt whetstone.net danna2.net dense$version_$count
+		
+		version=$(( $version + 1 ))
+
+	done
+	count=$(( $count + 1 ))
+done 
+
+
+
