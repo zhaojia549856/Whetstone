@@ -8,13 +8,13 @@ while [ $count != 2 ]; do
 	version=1
 	while [ $version != 4 ]; do 
 		echo "python dense$version.py | tail -n 10 > output"
-		python dense$version.py | tail -n 10 > output
+#		python dense$version.py | tail -n 10 > output
 
-		echo "mkdir dense$version_$count" 
-		mkdir dense$version_$count
+		echo "mkdir dense$version\_$count" 
+		mkdir ./dense$version\_$count
 
-		echo "mv supply.txt whetstone.net danna2.net output dense$version_$count" 
-		mv supply.txt whetstone.net danna2.net output dense$version_$count
+		echo "mv supply.txt whetstone.net danna2.net output dense$version\_$count" 
+		mv supply.txt whetstone.net danna2.net output dense$version\_$count
 		
 		version=$(( $version + 1 ))
 
