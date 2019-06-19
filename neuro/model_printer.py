@@ -454,6 +454,7 @@ class neuro():
             #TODO need to change 10 to the largest weight possible for reset 
             #reset happen at time inter + d and every inter
             self.PB(inter, d, self.init_neuron, B0, thresholds[i]+10, [(1, i, self.z_start), (2, i, self.z_start)], [self.synapses[-1][-1]], n[0]*n[1])
+            self.PB(inter, d-1, self.init_neuron, B0, 0, [(3, i, self.z_start), (4, i, self.z_start)], cycle=n[0]*n[1])
 
 
             for y in range(n[1]):
