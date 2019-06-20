@@ -11,8 +11,8 @@ from keras.optimizers import Adadelta
 from os import sys
 import math
 
-DEFAULT_WEIGHT = 1
-DEFAULT_THRESHOLD = 1
+DEFAULT_WEIGHT = 0.01
+DEFAULT_THRESHOLD = 0.01
 
 class neuro():
     def __init__(self, model, key, format, path=None, filename=None):
@@ -49,8 +49,10 @@ class neuro():
 
         model = self.model
         self.construct_supply_file(model.layers[0])
+        self.time = 0
 
         for layer in model.layers[1:]:
+            print(self.time)
             if type(layer) == keras.layers.Conv2D:
                 print("keras.layers.Conv2D")
 
@@ -66,6 +68,7 @@ class neuro():
 
                 #update to current size
                 self.load_maxpooling_synapses(x, y)
+                self.time += 1 
 
             elif type(layer) == keras.layers.Flatten:
                 print("keras.layer.Flatten")
@@ -80,8 +83,15 @@ class neuro():
                 self.load_dense_neurons(0.5 - thresholds)
                 self.load_dense_synapses(weights)
 
+                self.time += 1 
+
             elif type(layer) == keras.layers.normalization.BatchNormalization:
                 print("ERROR: Can't handle BatchNormalization layer")
+
+        layer = self.neurons[-1] 
+        self.neurons[-1] = [self.global_init]
+        self.neurons.append(layer)
+        # self.neurons.append([self.global_init])
 
         # flat neuron layer for printing 
         self.xy_size = 0
@@ -96,6 +106,21 @@ class neuro():
 
             weights, thresholds = layer.get_weights()
             self.load_dense_neurons(0.5 - thresholds)
+
+            #Create global init neuron for negative threshold
+            self.global_init = neuron(0, 0, DEFAULT_THRESHOLD, self.neuron_id, self.z_start)
+            self.neuron_id += 1 
+            self.z_start += 1
+
+            #active global init by input neurons
+            synapses = [] 
+            id = self.synapse_id
+            for i in range(len(self.neurons[-1])):
+                synapses.append(self.neurons[-1][i], self.global_init, DEFAULT_WEIGHT, id, 0)
+                id += 1 
+            self.synapses.append(synapses)
+            self.synapse_id = id
+
             f = open(self.supply, "w")
             f.write("Dense\n")
             f.write("KEY: \n")
@@ -121,6 +146,11 @@ class neuro():
             self.last_layer_size = [self.input_size[0], self.input_size[1], filters]
 
             self.load_conv2d_neurons(0.5 - thresholds)
+
+            #TODO: remove duplicate
+            self.Init()
+            self.global_init = self.init_neuron
+            self.neurons = self.neurons[:-1]
             
             #write first layer to supply file
             f = open(self.supply, "w")
@@ -147,7 +177,7 @@ class neuro():
             f.close()   
         else:
             print("load_first_layer error: Never seen first layer type %s" % str(type(layer)))
-            exit(0)          
+            exit(0)
 
     def flatten(self, layer):
         if len(np.array(layer).shape) == 1: 
@@ -250,8 +280,20 @@ class neuro():
 
     def load_dense_neurons(self, thresholds):
         layer = []
+        synapses = [] 
+        id = self.synapse_id
+
         for i in range(len(thresholds)):
             layer.append(neuron(0, i, thresholds[i], i + self.neuron_id, self.z_start))
+
+            # 0 weight synapse for negative threshold
+            if thresholds[i] <= 0: 
+                synapses.append(synapse(self.global_init, layer[-1], 0, id, delay=self.time+1))
+                id += 1
+
+        self.synapse_id = id
+        self.synapses.append(synapses)
+        
         self.neurons.append(layer)
         self.z_start += 1
         self.neuron_id += i + 1
@@ -287,13 +329,19 @@ class neuro():
         filters = config["filters"]
         kernel_size = list(config["kernel_size"])
 
+        d = 3 
+        i = 2
+
         self.Init()
 
-        self.PA(self.last_layer_size, kernel_size, 2, 3)
+        self.PA(self.last_layer_size, kernel_size, i, d)
 
-        self.PC(self.last_layer_size, weights, 0.5 - thresholds, 2, 3)
+        self.PC(self.last_layer_size, weights, 0.5 - thresholds, i, d)
 
         self.last_layer_size[2] = filters
+
+        self.time += d + 4 + i * self.last_layer_size[0] * self.last_layer_size[1]
+
 
     def Init(self):
         synapses = []
@@ -307,7 +355,7 @@ class neuro():
         self.neurons.append([[[self.init_neuron]]])
         self.neuron_id += 1
         self.z_start += 1
-#add one delay
+        #add one delay
         #connect inputs with the init neuron
         for z in range(self.last_layer_size[2]):
             for y in range(self.last_layer_size[1]):
@@ -390,7 +438,7 @@ class neuro():
         # print("i is ", i)
 
         B0 = neuron(x0, y0, DEFAULT_THRESHOLD, self.neuron_id, z0) 
-        B1 = neuron(x1, y1, i, self.neuron_id+1, z1)
+        B1 = neuron(x1, y1, i*DEFAULT_THRESHOLD, self.neuron_id+1, z1)
         self.neurons[-1].append(B0)
         self.neurons[-1].append(B1)
         self.neuron_id += 2
@@ -454,7 +502,8 @@ class neuro():
             #TODO need to change 10 to the largest weight possible for reset 
             #reset happen at time inter + d and every inter
             self.PB(inter, d, self.init_neuron, B0, thresholds[i]+10, [(1, i, self.z_start), (2, i, self.z_start)], [self.synapses[-1][-1]], n[0]*n[1])
-            self.PB(inter, d-1, self.init_neuron, B0, 0, [(3, i, self.z_start), (4, i, self.z_start)], cycle=n[0]*n[1])
+            if thresholds[i] <= 0: 
+                self.PB(inter, self.time+d-1, self.global_init, B0, 0, [(3, i, self.z_start), (4, i, self.z_start)], cycle=n[0]*n[1])
 
 
             for y in range(n[1]):
@@ -474,49 +523,6 @@ class neuro():
         self.neurons.append(c1_neurons)
         self.neurons.append(c2_neurons)
         self.z_start += 2 + len(thresholds) * 2
-
-
-
-        # #TESTING
-        # f = open("test.net", "w");
-        # # Whetstone num_neurons num_synapses inputs outputs
-        # #   IMPORTANT
-        # f.write("Whetstone %d %d %d\n" % (self.num_neurons(), self.last_layer_size[0]*self.last_layer_size[1]*self.last_layer_size[2], 100))
-        # for z in range(self.last_layer_size[2]):
-        #     for y in range(self.last_layer_size[1]):
-        #         for x in range(self.last_layer_size[0]):
-        #             f.write(self.neurons[0][x][y][z].print_neuron("I"))
-
-        # f.write(self.neurons[1][0][0][0].print_neuron("H"))
-
-        # for x in range(len(self.neurons[2])):
-        #     for y in range(len(self.neurons[2][x])):
-        #         for z in range(len(self.neurons[2][x][y])):
-        #             f.write(self.neurons[2][x][y][z].print_neuron("H"))
-
-        # for i in range(len(self.neurons[3])):
-        #     f.write(self.neurons[3][i].print_neuron("H"))
-
-        # for x in range(len(self.neurons[4])):
-        #     for y in range(len(self.neurons[4][x])):
-        #         for z in range(len(self.neurons[4][x][y])):
-        #             f.write(self.neurons[4][x][y][z].print_neuron("H"))
-
-        # for x in range(len(self.neurons[5])):
-        #     for y in range(len(self.neurons[5][x])):
-        #         for z in range(len(self.neurons[5][x][y])):
-        #             f.write(self.neurons[5][x][y][z].print_neuron("O"))
-
-
-        # for i in range(len(self.synapses)):
-        #     for j in range(len(self.synapses[i])):
-        #         f.write(self.synapses[i][j].print_synapse())
-
-
-
-
-
-        
 
 
 
