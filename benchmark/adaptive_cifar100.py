@@ -26,7 +26,7 @@ def print_data(x_train, y_train, x_test, y_test, shape):
 	for i in range(len(x_train)):
 		for x in range(len(x_train[i])):
 			for y in range(len(x_train[i][x])):
-				for z in range(len(x_train[i][x][y]))
+				for z in range(len(x_train[i][x][y])):
 					f.write("%f " % (x_train[i][x][y][z]))
 		f.write("%d\n" % y_train[i])
 	f.close()
