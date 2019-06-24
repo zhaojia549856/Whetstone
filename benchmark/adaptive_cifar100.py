@@ -20,7 +20,7 @@ from whetstone.callbacks import AdaptiveSharpener
 from neuro.model_printer import neuro
 import sys
 
-def print_data(x_train, y_train, x_test, y_test, shape):
+def print_data(x_train, y_train, x_test, y_test):
 
 	f = open("training.txt", "w")
 	for i in range(len(x_train)):
