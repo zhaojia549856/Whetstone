@@ -26,14 +26,16 @@ def print_data(x_train, y_train, x_test, y_test):
 	for i in range(len(x_train)):
 		for x in range(len(x_train[i])):
 			for y in range(len(x_train[i][x])):
-				f.write("%f " % (x_train[i][x][y]))
+				for z in range(len(x_train[i][x][y]))
+					f.write("%f " % (x_train[i][x][y][z]))
 		f.write("%d\n" % y_train[i])
 	f.close()
 	f = open("testing.txt", "w")
 	for i in range(len(x_test)):
 		for x in range(len(x_test[i])):
 			for y in range(len(x_test[i][x])):
-				f.write("%f " % (x_test[i][x][y]))
+				for z in range(len(x_test[i][x][y])):
+					f.write("%f " % (x_test[i][x][y][z]))
 		f.write("%d\n" % y_test[i])	
 	f.close()
 
