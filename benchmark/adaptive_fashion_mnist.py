@@ -127,7 +127,7 @@ y_test = keras.utils.to_categorical(y_test, numClasses)
 labelNames = ["top", "trouser", "pullover", "dress", "coat",
 	"sandal", "shirt", "sneaker", "bag", "ankle boot"]
 
-key = key_generator(num_classes=10, width=numClasses*4, overlapping=True)
+key = key_generator(num_classes=numClasses, width=numClasses*4, overlapping=True)
 
 model = Sequential()
 model.add(Conv2D(16, (3, 3), padding='same', activation=None, use_bias=True, input_shape=input_shape))
@@ -154,7 +154,7 @@ model.add(Flatten())
 model.add(Dense(400, activation=None, use_bias=True))
 model.add(BatchNormalization())
 model.add(Spiking_BRelu())
-model.add(Dense(40, activation=None, use_bias=True))
+model.add(Dense(numClasses*4, activation=None, use_bias=True))
 model.add(BatchNormalization())
 model.add(Spiking_BRelu())
 model.add(Softmax_Decode(key))
