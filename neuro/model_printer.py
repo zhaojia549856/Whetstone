@@ -459,36 +459,46 @@ class neuro():
     def PB(self, i, d, pre_neuron, post_neuron, weight, coords, output_synapses=None, cycle=None): 
         x0, y0, z0 = coords[0]
         x1, y1, z1 = coords[1]
-        # cancel_synapses = []
-        # print("i is ", i)
+        x2, y2, z2 = coords[2]
 
         B0 = neuron(x0, y0, DEFAULT_THRESHOLD, self.neuron_id, z0) 
-        B1 = neuron(x1, y1, (i-1)*DEFAULT_THRESHOLD, self.neuron_id+1, z1)
+        B1 = neuron(x1, y1, DEFAULT_THRESHOLD, self.neuron_id+1, z1)
+        B2 = neuron(x2, y2, (i-1)*DEFAULT_THRESHOLD, self.neuron_id+2, z2)
         self.neurons[-1].append(B0)
         self.neurons[-1].append(B1)
-        self.neuron_id += 2
+        self.neurons[-1].append(B2)
+        self.neuron_id += 3
 
         S1 = synapse(pre_neuron, B0, JUMP_WEIGHT, self.synapse_id, delay=d-2)
-        S2 = synapse(B0, B0, JUMP_WEIGHT, self.synapse_id+1, delay=1) 
-        S3 = synapse(B0, B1, DEFAULT_WEIGHT, self.synapse_id+2, delay=1)
-        S4 = synapse(B1, post_neuron, weight, self.synapse_id+3, delay=1) #reset neuron should have weight be infinite
+
+        S2 = synapse(B0, B1, JUMP_WEIGHT, self.synapse_id+1, delay=1)
+        S3 = synapse(B1, B0, JUMP_WEIGHT, self.synapse_id+2, delay=1)
+       
+        S4 = synapse(B0, B2, DEFAULT_THRESHOLD, self.synapse_id+3, delay=1)
+        S5 = synapse(B1, B2, DEFAULT_THRESHOLD, self.synapse_id+4, delay=1)
+
+        S6 = synapse(B2, post_neuron, weight, self.synapse_id+5, delay=1)
         if cycle == None: 
             print("cycle None")
             exit(1)
-        # print("add synapse delay",d, i, d+i*cycle)
-        S5 = synapse(pre_neuron, B0, JUMP_WEIGHT * -100, self.synapse_id+4, delay=d+i*cycle)
+    
+        S7 = synapse(pre_neuron, B0, JUMP_WEIGHT * -100, self.synapse_id+6, delay=d+i*cycle)
+        S8 = synapse(pre_neuron, B1, JUMP_WEIGHT * -100, self.synapse_id+7, delay=d+i*cycle)
  
         self.synapses[-1].append(S1)
         self.synapses[-1].append(S2)
         self.synapses[-1].append(S3)
         self.synapses[-1].append(S4)
         self.synapses[-1].append(S5)
-        self.synapse_id += 5
+        self.synapses[-1].append(S6)
+        self.synapses[-1].append(S7)
+        self.synapses[-1].append(S8)
+        self.synapse_id += 8
 
         if output_synapses != None:
             s_id = self.synapse_id
             for s in output_synapses:
-                self.synapses[-1].append(synapse(B1, s.post_n, s.weight * -1, s_id, delay=s.delay+1))
+                self.synapses[-1].append(synapse(B2, s.post_n, s.weight * -1, s_id, delay=s.delay+1))
                 s_id += 1
             self.synapse_id = s_id
 
@@ -523,9 +533,9 @@ class neuro():
 
             #TODO need to change 10 to the largest weight possible for reset 
             #reset happen at time inter + d and every inter
-            self.PB(inter, d, self.init_neuron, B0, thresholds[i]+10, [(1, i, self.z_start), (2, i, self.z_start)], [self.synapses[-1][-1]], n[0]*n[1])
+            self.PB(inter, d, self.init_neuron, B0, thresholds[i]+10, [(1, i, self.z_start), (2, i, self.z_start), (3, i, self.z_start)], [self.synapses[-1][-1]], n[0]*n[1])
             if thresholds[i] <= 0: 
-                self.PB(inter, self.time+d-1, self.global_init, B0, 0, [(3, i, self.z_start), (4, i, self.z_start)], cycle=n[0]*n[1])
+                self.PB(inter, self.time+d-1, self.global_init, B0, 0, [(4, i, self.z_start), (5, i, self.z_start), (6, i, self.z_start)], cycle=n[0]*n[1])
 
 
             for y in range(n[1]):
@@ -540,17 +550,13 @@ class neuro():
                     self.neuron_id += 2 
                     self.synapse_id += 3 
 
-                    self.PB(inter, d+2, self.init_neuron, c1_neurons[x][y][i], DEFAULT_THRESHOLD*100, [(1 + (y*n[0]+x), i, self.z_start+1), (1 + n[0]*n[1] + (y*n[0]+x), i, self.z_start+1)], [self.synapses[-1][-1]], n[0]*n[1])
+                    self.PB(inter, d+2, self.init_neuron, c1_neurons[x][y][i], DEFAULT_THRESHOLD*100, [(1 + n[0]*n[1]*0 + (y*n[0]+x), i, self.z_start+1), (1 + n[0]*n[1]*1 + (y*n[0]+x), i, self.z_start+1), (1 + n[0]*n[1]*2 + (y*n[0]+x), i, self.z_start+1)], [self.synapses[-1][-1]], n[0]*n[1])
             print(self.z_start + 2 + len(thresholds) + i)
 
         for x in range(len(last_layer_neurons)/2):
             for y in range(len(last_layer_neurons[x])):
                 for z in range(len(last_layer_neurons[x][y])):
-                    self.PB(inter*n[0], d, self.init_neuron, last_layer_neurons[x][y][z], DEFAULT_THRESHOLD*100, [(len(last_layer_neurons)+x*2, y, last_layer_neurons[x][y][z].z), (len(last_layer_neurons)+x*2+1, y, last_layer_neurons[x][y][z].z)],  self.current_weight_synapses[x][y][z], n[0]-1)
-
-                    # self.PB(inter*n[0], d, self.init_neuron, last_layer_neurons[x][y][z], DEFAULT_THRESHOLD*100, [(len(last_layer_neurons)+x*2, y, last_layer_neurons[x][y][z].z), (len(last_layer_neurons)+x*2+1, y, last_layer_neurons[x][y][z].z)],  list(synapses[x][y][z]), n[0]-1)
-                    # if x == 0:
-                    #     self.PB(inter*n[0], d+inter, self.init_neuron, last_layer_neurons[x][y][z], DEFAULT_THRESHOLD*100, [(len(last_layer_neurons)+x*2, y, last_layer_neurons[x][y][z].z), (len(last_layer_neurons)+x*2+1, y, last_layer_neurons[x][y][z].z)],  list(synapses[x][y][z]), n[0]-1)
+                    self.PB(inter*n[0], d, self.init_neuron, last_layer_neurons[x][y][z], DEFAULT_THRESHOLD*100, [(len(last_layer_neurons)+x*3, y, last_layer_neurons[x][y][z].z), (len(last_layer_neurons)+x*3+1, y, last_layer_neurons[x][y][z].z), (len(last_layer_neurons)+x*3+2, y, last_layer_neurons[x][y][z].z)],  self.current_weight_synapses[x][y][z], n[0]-1)
 
         self.neurons.append(c1_neurons)
         self.neurons.append(c2_neurons)
