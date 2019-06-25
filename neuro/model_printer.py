@@ -476,7 +476,7 @@ class neuro():
             print("cycle None")
             exit(1)
         # print("add synapse delay",d, i, d+i*cycle)
-        S5 = synapse(pre_neuron, B0, JUMP_WEIGHT * -1, self.synapse_id+4, delay=d+i*cycle)
+        S5 = synapse(pre_neuron, B0, JUMP_WEIGHT * -100, self.synapse_id+4, delay=d+i*cycle)
  
         self.synapses[-1].append(S1)
         self.synapses[-1].append(S2)
@@ -540,7 +540,7 @@ class neuro():
                     self.neuron_id += 2 
                     self.synapse_id += 3 
 
-                    self.PB(inter, d+2, self.init_neuron, c1_neurons[x][y][i], DEFAULT_THRESHOLD*4, [(1 + (y*n[0]+x), i, self.z_start+1), (1 + n[0]*n[1] + (y*n[0]+x), i, self.z_start+1)], [self.synapses[-1][-1]], n[0]*n[1])
+                    self.PB(inter, d+2, self.init_neuron, c1_neurons[x][y][i], DEFAULT_THRESHOLD*100, [(1 + (y*n[0]+x), i, self.z_start+1), (1 + n[0]*n[1] + (y*n[0]+x), i, self.z_start+1)], [self.synapses[-1][-1]], n[0]*n[1])
             print(self.z_start + 2 + len(thresholds) + i)
 
         for x in range(len(last_layer_neurons)/2):
@@ -615,10 +615,10 @@ class danna2():
             f.write(self.print_O(neuro.neurons[-1][i], i))
 
     def print_neuron(self, neuron):
-        return "N %d %d %d %d\n" % (neuron.x+neuron.z*self.neuro.xy_size, neuron.y, neuron.threshold*256, neuron.refc)
+        return "N %d %d %d %d\n" % (neuron.x+neuron.z*self.neuro.xy_size, neuron.y, neuron.threshold*1023, neuron.refc)
 
     def print_synapse(self, synapse):
-        return "\tS %d %d %d %d\n" % (synapse.pre_n.x+synapse.pre_n.z*self.neuro.xy_size, synapse.pre_n.y, synapse.weight*256, synapse.delay-1)
+        return "\tS %d %d %d %d\n" % (synapse.pre_n.x+synapse.pre_n.z*self.neuro.xy_size, synapse.pre_n.y, synapse.weight*1023, synapse.delay-1)
 
     def print_I(self, neuron):
         return "I %d %d %d\n" % (neuron.id, neuron.x+neuron.z*self.neuro.xy_size, neuron.y)
