@@ -75,7 +75,8 @@ def print_debug_spike(model, x_test, y_test):
 
 	    for x in range(len(x_test[i])):
 	    	for y in range(len(x_test[i][x])):
-	    		f_spike.write("%f " % x_test[i][x][y])  
+	    		for z in range(len(x_test[i][x][y]))
+	    		f_spike.write("%f " % x_test[i][x][y][z])  
 	    f_spike.write("%d %d\n" % (X[i], answer)) 
 
 	    for j in range(len(model.layers)):
