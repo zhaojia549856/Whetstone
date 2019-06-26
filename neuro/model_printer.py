@@ -92,7 +92,6 @@ class neuro():
         layer = self.neurons[-1] 
         self.neurons[-1] = [self.global_init]
         self.neurons.append(layer)
-        # self.neurons.append([self.global_init])
 
         # flat neuron layer for printing 
         self.xy_size = 0
@@ -145,9 +144,7 @@ class neuro():
             filters = config["filters"]
             kernel_size = config["kernel_size"]
             self.last_layer_size = [self.input_size[0], self.input_size[1], filters]
-
             self.load_conv2d_neurons(0.5 - thresholds)
-
             #TODO: remove duplicate
             # self.Init()
             synapses = []
@@ -171,8 +168,6 @@ class neuro():
             self.synapses.append(synapses)
             self.synapse_id = s_id
 
-            # self.global_init = self.init_neuron
-            # self.neurons = self.neurons[:-1]
             
             #write first layer to supply file
             f = open(self.supply, "w")
@@ -191,10 +186,11 @@ class neuro():
                         entry = str(z2*self.last_layer_size[1]*self.last_layer_size[0] + y2*self.last_layer_size[0] + x2) + " "
                         for x1 in range(kernel_size[1]):
                             for y1 in range(kernel_size[0]):
-                                x = x2 + x1 - kernel_size[0]/2
-                                y = y2 + y1 - kernel_size[1]/2
-                                if x >= 0 and x < self.input_size[0] and y >= 0 and y < self.input_size[1]:
-                                    entry += "%d:%lf " % (x*self.input_size[0]+y, weights[x1][y1][0][z2])
+                                for z1 in range(self.input_size[2]):
+                                        x = x2 + x1 - kernel_size[0]/2
+                                        y = y2 + y1 - kernel_size[1]/2
+                                        if x >= 0 and x < self.input_size[0] and y >= 0 and y < self.input_size[1]:
+                                            entry += "%d:%lf " % (x*self.input_size[2]*self.input_size[1]+ y*self.input_size[2] + z1, weights[x1][y1][z1][z2])
                         f.write(entry + "\n")
             f.close()   
         else:
