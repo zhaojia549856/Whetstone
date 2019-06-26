@@ -114,9 +114,10 @@ x_test /= 255
 #TODO: delete after confirm 
 
 x_train = x_train[:1000]
-x_test = x_test[:1000]
 y_train = y_train[:1000]
+x_test = x_test[:1000]
 y_test = y_test[:1000]
+
 
 
 print_data(x_train, y_train, x_test, y_test)

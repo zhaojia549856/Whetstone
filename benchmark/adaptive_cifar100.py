@@ -81,7 +81,7 @@ def print_debug_spike(model, x_test, y_test):
 
 	    for j in range(len(model.layers)):
 	    	if "spiking" in model.layers[j].name or "max" in model.layers[j].name or "flatten" in model.layers[j].name:
-	    		testValueLayer(model, j, x_test[i].reshape(1, len(x_test[i]), len(x_test[i][0]), 1), f_spike)
+	    		testValueLayer(model, j, x_test[i].reshape(1, len(x_test[i]), len(x_test[i][0]), 3), f_spike)
 	    f_spike.write("+++++++++++++++++++++++++++++++++++++++++++++\n")
 	    f_spike.flush()
 
@@ -92,7 +92,8 @@ def print_debug_spike(model, x_test, y_test):
 
 	        for x in range(len(x_test[i])):
 	        	for y in range(len(x_test[i][x])):
-	    			f_wrong.write("%f " % (x_test[i][x][y]))
+	        		for z in range(len(x_test[i][x][y])):
+	    				f_wrong.write("%f " % (x_test[i][x][y][z]))
 	    	f_wrong.write("%d %d\n" % (X[i], answer))
 	    	f_wrong.flush()
 
@@ -119,8 +120,8 @@ x_test /= 255
 #TODO: delete after confirm 
 
 x_train = x_train[:1000]
-x_test = x_test[:1000]
 y_train = y_train[:1000]
+x_test = x_test[:1000]
 y_test = y_test[:1000]
 
 
