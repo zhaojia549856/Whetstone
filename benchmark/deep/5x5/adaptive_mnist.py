@@ -177,4 +177,5 @@ print('They should be the same.')
 neuro(new_model, key, "whetstone")
 neuro(new_model, key, "danna2")
 
+print_debug_spike(new_model, x_test[:2], y_test[:2])
 # print_debug_spike(new_model, x_test, y_test)

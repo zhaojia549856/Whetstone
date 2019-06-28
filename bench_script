@@ -1,0 +1,31 @@
+#!/bin/sh
+
+topology=("deep" "medium" "shallow" "dense")
+filters=("7x7" "5x5" "3x3")
+datasets=("cifar100" "cifar10" "fashion_mnist" "mnist")
+
+for i in {0..1}; do
+	for topo in "${topology[@]}" ; do
+		for ft in "${filters[@]}"  ; do 
+			for data in "${datasets[@]}" ; do 
+				echo "cp benchmark/$topo/$ft/adaptive_$data.py"
+				cp benchmark/$topo/$ft/adaptive_$data.py .
+
+				echo "python adaptive_$data.py > output"
+				python adaptive_$data.py > output
+
+				echo "mkdir -p data/$data/"$topo"_"$ft"_"$i""
+				mkdir -p data/$data/"$topo"_"$ft"_"$i"
+
+				echo "mv whetstone.net danna2.net supply.txt output data/$data/$topo_$ft_$i"
+				mv whetstone.net danna2.net supply.txt output data/$data/$topo_$ft_$i
+
+				echo "mv spike wrong data/$data/$topo_$ft_$i"
+				mv spike wrong data/$data/$topo_$ft_$i
+
+				echo "rm adaptive_$data.py"
+				rm adaptive_$data.py
+			done 
+		done
+	done
+done 

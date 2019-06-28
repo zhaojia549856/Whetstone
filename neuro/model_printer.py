@@ -190,7 +190,7 @@ class neuro():
                                         x = x2 + x1 - kernel_size[0]/2
                                         y = y2 + y1 - kernel_size[1]/2
                                         if x >= 0 and x < self.input_size[0] and y >= 0 and y < self.input_size[1]:
-                                            entry += "%d:%lf " % (x*self.input_size[2]*self.input_size[1]+ y*self.input_size[2] + z1, weights[x1][y1][z1][z2])
+                                            entry += "%d:%.9lf " % (x*self.input_size[2]*self.input_size[1]+ y*self.input_size[2] + z1, weights[x1][y1][z1][z2])
                         f.write(entry + "\n")
             f.close()   
         else:

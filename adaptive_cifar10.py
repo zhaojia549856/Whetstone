@@ -9,7 +9,7 @@ Should achieve 99%+ accuracy.
 import numpy as np
 import keras
 import keras.backend as K
-from keras.datasets import cifar100
+from keras.datasets import cifar10
 from keras.models import Sequential, Model
 from keras.utils import to_categorical
 from keras.layers import Dense, Conv2D, Reshape, Flatten, MaxPooling2D, BatchNormalization
@@ -76,7 +76,7 @@ def print_debug_spike(model, x_test, y_test):
 	    for x in range(len(x_test[i])):
 	    	for y in range(len(x_test[i][x])):
 	    		for z in range(len(x_test[i][x][y])):
-	    			f_spike.write("%f " % x_test[i][x][y][z])
+	    			f_spike.write("%f " % x_test[i][x][y][z])  
 	    f_spike.write("%d %d\n" % (X[i], answer)) 
 
 	    for j in range(len(model.layers)):
@@ -97,9 +97,9 @@ def print_debug_spike(model, x_test, y_test):
 	    	f_wrong.write("%d %d\n" % (X[i], answer))
 	    	f_wrong.flush()
 
-numClasses = 100
+numClasses = 10
 img_rows, img_cols = 32, 32
-(x_train, y_train), (x_test, y_test) = cifar100.load_data(label_mode='fine')
+(x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
 if K.image_data_format() == 'channels_first':
     x_train = x_train.reshape(x_train.shape[0], 3, img_rows, img_cols)
@@ -132,6 +132,19 @@ model.add(Conv2D(128, (7, 7), padding='same', activation=None, use_bias=True))
 model.add(BatchNormalization())
 model.add(Spiking_BRelu())
 model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Conv2D(128, (7, 7), padding='same', activation=None, use_bias=True))
+model.add(BatchNormalization())
+model.add(Spiking_BRelu())
+model.add(Conv2D(128, (7, 7), padding='same', activation=None, use_bias=True))
+model.add(BatchNormalization())
+model.add(Spiking_BRelu())
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Conv2D(128, (7, 7), padding='same', activation=None, use_bias=True))
+model.add(BatchNormalization())
+model.add(Spiking_BRelu())
+model.add(Conv2D(128, (7, 7), padding='same', activation=None, use_bias=True))
+model.add(BatchNormalization())
+model.add(Spiking_BRelu())
 model.add(Flatten())
 model.add(Dense(1600, activation=None, use_bias=True))
 model.add(BatchNormalization())
@@ -162,5 +175,4 @@ print('They should be the same.')
 neuro(new_model, key, "whetstone")
 neuro(new_model, key, "danna2")
 
-print_debug_spike(new_model, x_test[:2], y_test[:2])
 # print_debug_spike(new_model, x_test, y_test)
