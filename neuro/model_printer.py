@@ -104,6 +104,8 @@ class neuro():
         if type(layer) == keras.layers.Dense:
             print("first a dense layer")
 
+            self.global_init = None
+
             weights, thresholds = layer.get_weights()
             self.load_dense_neurons(0.5 - thresholds)
 
@@ -305,7 +307,7 @@ class neuro():
             layer.append(neuron(0, i, thresholds[i], i + self.neuron_id, self.z_start))
 
             # 0 weight synapse for negative threshold
-            if thresholds[i] <= 0: 
+            if thresholds[i] <= 0 and self.global_init != None: 
                 synapses.append(synapse(self.global_init, layer[-1], 0, id, delay=self.time))
                 id += 1
 
