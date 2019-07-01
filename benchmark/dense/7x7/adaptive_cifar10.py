@@ -101,16 +101,6 @@ numClasses = 10
 img_rows, img_cols = 32, 32
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
-if K.image_data_format() == 'channels_first':
-    x_train = x_train.reshape(x_train.shape[0], 3, img_rows, img_cols)
-    x_test = x_test.reshape(x_test.shape[0], 3, img_rows, img_cols)
-    input_shape = (3, img_rows, img_cols)
-else:
-    x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 3)
-    x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 3)
-    input_shape = (img_rows, img_cols, 3)
-
-
 
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
@@ -121,6 +111,9 @@ x_test /= 255
 
 y_train = keras.utils.to_categorical(y_train, numClasses)
 y_test = keras.utils.to_categorical(y_test, numClasses)
+
+x_train = np.reshape(x_train, (len(x_train), img_rows*img_cols*3))
+x_test = np.reshape(x_test, (len(x_test), img_rows*img_cols*3))
 
 key = key_generator(num_classes=numClasses, width=numClasses*4, overlapping=True)
 
