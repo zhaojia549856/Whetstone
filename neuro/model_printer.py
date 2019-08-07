@@ -11,11 +11,19 @@ from keras.optimizers import Adadelta
 from os import sys
 import math
 
+
+#   default weight and threshold to cooperate with DANNA2
+#   Jump weight to force neuron to spike  
+#   neuron only spike when charge is larger (not equal to) than the threshold
+
 DEFAULT_WEIGHT = 0.01
 DEFAULT_THRESHOLD = 0.01
 JUMP_WEIGHT = 0.015
 
 class neuro():
+
+    #   pass parameter and call architecture
+    #   
     def __init__(self, model, key, format, path=None, filename=None):
         self.model = model
         self.key = key
@@ -37,6 +45,8 @@ class neuro():
         else: 
             print("Invalid model")
 
+
+    #   init parameters 
     def load_config(self):
         self.neurons = []; self.synapses = []
         self.input_size = list(self.model.layers[0].get_config()["batch_input_shape"][1:])
@@ -44,24 +54,33 @@ class neuro():
         self.neuron_id = 0 
         self.synapse_id = 0
 
+
+    #   main conversion
+    #   convert different layer sturctures
     def loading(self):
 
         self.load_config()
 
         model = self.model
+
+        #   create supply file using the first layer
         self.construct_supply_file(model.layers[0])
         self.time = 0
 
+        #   loop through layers
         for layer in model.layers[1:]:
             print(self.time)
             if type(layer) == keras.layers.Conv2D:
                 print("keras.layers.Conv2D")
 
+                #convert Conv2d layer + time update
                 self.whetstone_v2(layer)
 
             elif type(layer) == keras.layers.MaxPooling2D:
                 print("keras.layer.MaxPooling2D")
                 (x, y) = layer.get_config()["pool_size"] 
+
+                #update size
                 self.last_layer_size = [self.last_layer_size[0]/x, self.last_layer_size[1]/y, self.last_layer_size[2]]
                 
                 #loading neuron + add z_start
@@ -73,12 +92,15 @@ class neuro():
 
             elif type(layer) == keras.layers.Flatten:
                 print("keras.layer.Flatten")
+
+                #flatten and update size
                 self.neurons[-1] = self.flatten(self.neurons[-1])
                 self.last_layer_size = [self.neurons[-1], None, None]
 
             elif type(layer) == keras.layers.Dense:
                 print("keras.layers.Dense")
                 
+                #call dense convert
                 weights, thresholds = layer.get_weights()
 
                 self.load_dense_neurons(0.5 - thresholds)
@@ -89,6 +111,8 @@ class neuro():
             elif type(layer) == keras.layers.normalization.BatchNormalization:
                 print("ERROR: Can't handle BatchNormalization layer")
 
+
+        # swap global init to last layer for easy print
         layer = self.neurons[-1] 
         self.neurons[-1] = [self.global_init]
         self.neurons.append(layer)
@@ -100,6 +124,8 @@ class neuro():
             if len(self.neurons[i]) > self.xy_size:
                 self.xy_size = len(self.neurons[i])
 
+
+    # supply file printer for conv2d or dense first layer
     def construct_supply_file(self, layer):
         if type(layer) == keras.layers.Dense:
             print("first a dense layer")
@@ -107,6 +133,7 @@ class neuro():
             self.global_init = None
 
             weights, thresholds = layer.get_weights()
+            #   append first layer neuron
             self.load_dense_neurons(0.5 - thresholds)
 
             #Create global init neuron for negative threshold
@@ -123,6 +150,7 @@ class neuro():
             self.synapses.append(synapses)
             self.synapse_id = id
 
+            # print key and weights to file
             f = open(self.supply, "w")
             f.write("Dense\n")
             f.write("KEY: \n")
@@ -146,21 +174,21 @@ class neuro():
             filters = config["filters"]
             kernel_size = config["kernel_size"]
             self.last_layer_size = [self.input_size[0], self.input_size[1], filters]
-            self.load_conv2d_neurons(0.5 - thresholds)
-            #TODO: remove duplicate
-            # self.Init()
-            synapses = []
 
+            #   append first layer neuron 
+            self.load_conv2d_neurons(0.5 - thresholds)
+            
+            #    create init neuron 
+            synapses = []
             s_id = self.synapse_id
             inputs = self.neurons[-1]      
             
-        # create init neuron 
             self.global_init = neuron(0, 0, DEFAULT_THRESHOLD, self.neuron_id, self.z_start)
             
             self.neuron_id += 1
             self.z_start += 1
-            #add one delay
-            #connect inputs with the init neuron
+            #   add one delay
+            #   connect inputs with the init neuron
             for z in range(self.last_layer_size[2]):
                 for y in range(self.last_layer_size[1]):
                     for x in range(self.last_layer_size[0]):
@@ -171,7 +199,7 @@ class neuro():
             self.synapse_id = s_id
 
             
-            #write first layer to supply file
+            #write first layer and key to supply file
             f = open(self.supply, "w")
             f.write("Conv2D\n")
 
@@ -199,6 +227,7 @@ class neuro():
             print("load_first_layer error: Never seen first layer type %s" % str(type(layer)))
             exit(0)
 
+    #   flatten 2 dimensional layer
     def flatten(self, layer):
         if len(np.array(layer).shape) == 1: 
             return layer
@@ -211,6 +240,7 @@ class neuro():
         layer = layer.tolist()
         return layer
 
+    # output number of neurons
     def num_neurons(self):
         count = 0
         for layer in self.neurons:
@@ -220,6 +250,7 @@ class neuro():
                 count += len(layer)
         return count
 
+    # output number of synapses 
     def num_synapses(self):
         count = 0
         for layer in self.synapses:
@@ -227,6 +258,7 @@ class neuro():
         return count
 
     def load_conv2d_neurons(self, thresholds):
+        #   fully convert CNN layer neuron use bias 
         layer = np.empty([self.last_layer_size[0], self.last_layer_size[1], len(thresholds)], dtype=type(neuron))
         for x in range(self.last_layer_size[0]):
             for y in range(self.last_layer_size[1]):
@@ -244,7 +276,7 @@ class neuro():
 
         layer = [] 
         id = self.synapse_id
-
+        #   fully connect two 3 dimensional CNN layer 
         for x2 in range(self.last_layer_size[0]):
             for y2 in range(self.last_layer_size[1]):
                 for z2 in range(filters):
@@ -269,6 +301,7 @@ class neuro():
         self.synapses.append(layer)
         self.last_layer_size[2] = filters
 
+    #   create 2D maxpool neurons
     def load_maxpooling_neurons(self):
         layer = []
         for x in range(self.last_layer_size[0]):
@@ -282,6 +315,7 @@ class neuro():
         self.z_start += self.last_layer_size[2]
         self.neuron_id += id + 1
 
+    #   create 2D maxpool synapses
     def load_maxpooling_synapses(self, kernal_x, kernal_y):
         layer = [] 
         id = self.synapse_id
@@ -289,15 +323,14 @@ class neuro():
             for y in range(self.last_layer_size[1]*kernal_y):
                 for x in range(self.last_layer_size[0]*kernal_x):
                     try:
-                        #TODO: auto append_pre_synapse process
                         layer.append(synapse(self.neurons[-2][x][y][z], self.neurons[-1][x/kernal_x][y/kernal_y][z], 1, id, delay=1))
-                        # self.neurons[-1][x/kernal_x][y/kernal_y][z].append_pre_synapse(layer[-1])
                         id += 1
                     except IndexError as e:
                         print(e)
         self.synapses.append(layer)
         self.synapse_id = id
 
+    # convert 1D neuron 
     def load_dense_neurons(self, thresholds):
         layer = []
         synapses = [] 
@@ -318,6 +351,7 @@ class neuro():
         self.z_start += 1
         self.neuron_id += i + 1
 
+    # convert 1D synapse 
     def load_dense_synapses(self, weights):
         layer = []
         id = self.synapse_id
@@ -325,11 +359,12 @@ class neuro():
         for i in range(len(weights)):
             for j in range(len(weights[i])):
                 layer.append(synapse(self.neurons[-2][i], self.neurons[-1][j], weights[i][j], id, delay=1))
-                # self.neurons[-1][j].append_pre_synapse(layer[-1])
                 id += 1
         self.synapses.append(layer)
         self.synapse_id = id
 
+    #   first version fully connected conversion
+    #   call fully convert function
     def whetstone_v1(self, layer):
         #setup neurons
         weights, thresholds = layer.get_weights()
@@ -343,12 +378,15 @@ class neuro():
         #update to current size 
         self.load_conv2d_synapses(filters, kernel_size, weights)
 
+    #   spike connection conversion
+    #   detail see paper
     def whetstone_v2(self, layer):
         weights, thresholds = layer.get_weights()
         config = layer.get_config()
         filters = config["filters"]
         kernel_size = list(config["kernel_size"])
 
+        # init delay of 4, interval of 2
         d = 4
         i = 2
 
@@ -358,6 +396,7 @@ class neuro():
 
         self.PC(self.last_layer_size, weights, 0.5 - thresholds, i, d)
 
+        #   update size and time
         self.last_layer_size[2] = filters
 
         self.time += d + 3 + i * self.last_layer_size[0] * self.last_layer_size[1]
