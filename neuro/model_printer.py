@@ -461,19 +461,25 @@ class neuro():
 
         B0 = neuron(x0, y0, DEFAULT_THRESHOLD, self.neuron_id, z0) 
         B1 = neuron(x1, y1, DEFAULT_THRESHOLD, self.neuron_id+1, z1)
-        B2 = neuron(x2, y2, (i-1)*DEFAULT_THRESHOLD, self.neuron_id+2, z2)
+        # B2 = neuron(x2, y2, (i-1)*DEFAULT_THRESHOLD, self.neuron_id+2, z2)
+        B2 = neuron(x2, y2, DEFAULT_THRESHOLD, self.neuron_id+2, z2)
         self.neurons[-1].append(B0)
         self.neurons[-1].append(B1)
         self.neurons[-1].append(B2)
         self.neuron_id += 3
 
         S1 = synapse(pre_neuron, B0, JUMP_WEIGHT, self.synapse_id, delay=d-2)
+        # S2 = synapse(B0, B1, JUMP_WEIGHT, self.synapse_id+1, delay=1)
+        # S3 = synapse(B1, B0, JUMP_WEIGHT, self.synapse_id+2, delay=1)
+        
+        S2 = synapse(B0, B1, JUMP_WEIGHT, self.synapse_id+1, delay=i)
+        S3 = synapse(B1, B0, JUMP_WEIGHT, self.synapse_id+2, delay=i)
 
-        S2 = synapse(B0, B1, JUMP_WEIGHT, self.synapse_id+1, delay=1)
-        S3 = synapse(B1, B0, JUMP_WEIGHT, self.synapse_id+2, delay=1)
-       
-        S4 = synapse(B0, B2, DEFAULT_THRESHOLD, self.synapse_id+3, delay=1)
-        S5 = synapse(B1, B2, DEFAULT_THRESHOLD, self.synapse_id+4, delay=1)
+        # S4 = synapse(B0, B2, DEFAULT_THRESHOLD, self.synapse_id+3, delay=1)
+        # S5 = synapse(B1, B2, DEFAULT_THRESHOLD, self.synapse_id+4, delay=1)
+
+        S4 = synapse(B0, B2, JUMP_WEIGHT, self.synapse_id+3, delay=i)
+        S5 = synapse(B1, B2, JUMP_WEIGHT, self.synapse_id+4, delay=i)
 
         S6 = synapse(B2, post_neuron, weight, self.synapse_id+5, delay=1)
         if cycle == None: 
