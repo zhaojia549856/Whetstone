@@ -41,8 +41,8 @@ neuro(model, key, "whetstone", "~/neuro/apps/class2d/data/mnist")
 An simple graph for the main branch: 
 
 ```
-__init__() -| 																			|->	architecture classes 
-			|-> loading()          								loading() 			loading()
+__init__() -|                                                                           |->	architecture classes 
+            |-> loading()                                       loading()            loading()
 					|					  						  |  |					|
 					|-> load_config() -> construct_supply_file() -|  |-> convert brach -|
 
