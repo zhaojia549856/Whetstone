@@ -486,8 +486,8 @@ class neuro():
             print("cycle None")
             exit(1)
     
-        S7 = synapse(pre_neuron, B0, JUMP_WEIGHT * -100, self.synapse_id+6, delay=d+i*cycle)
-        S8 = synapse(pre_neuron, B1, JUMP_WEIGHT * -100, self.synapse_id+7, delay=d+i*cycle)
+        S7 = synapse(pre_neuron, B0, JUMP_WEIGHT * -100, self.synapse_id+6, delay=1 + (d-2) + i * (cycle-1))
+        S8 = synapse(pre_neuron, B1, JUMP_WEIGHT * -100, self.synapse_id+7, delay=1 + (d-2) + i * (cycle-1))
  
         self.synapses[-1].append(S1)
         self.synapses[-1].append(S2)
