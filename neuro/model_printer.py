@@ -493,6 +493,12 @@ class neuro():
         self.synapses.append(synapses)
         self.synapse_id = s_id 
 
+    #       pre_neuron:         start neuron, usually init
+    #       post_neuron:        target neuron, reset or add weight
+    #       output_synapse:     reset neuron, cancel synapse
+    #       cycle:              end time of PB 
+    #       c1:                 label for PC C1 neurons
+
     def PB(self, i, d, pre_neuron, post_neuron, weight, coords, output_synapses=None, cycle=None, c1=False): 
         x0, y0, z0 = coords[0]
         x1, y1, z1 = coords[1]
@@ -500,7 +506,6 @@ class neuro():
 
         B0 = neuron(x0, y0, DEFAULT_THRESHOLD, self.neuron_id, z0) 
         B1 = neuron(x1, y1, DEFAULT_THRESHOLD, self.neuron_id+1, z1)
-        # B2 = neuron(x2, y2, (i-1)*DEFAULT_THRESHOLD, self.neuron_id+2, z2)
         B2 = neuron(x2, y2, DEFAULT_THRESHOLD, self.neuron_id+2, z2)
         self.neurons[-1].append(B0)
         self.neurons[-1].append(B1)
@@ -508,18 +513,15 @@ class neuro():
         self.neuron_id += 3
 
         S1 = synapse(pre_neuron, B0, JUMP_WEIGHT, self.synapse_id, delay=d-2)
-        # S2 = synapse(B0, B1, JUMP_WEIGHT, self.synapse_id+1, delay=1)
-        # S3 = synapse(B1, B0, JUMP_WEIGHT, self.synapse_id+2, delay=1)
         
         S2 = synapse(B0, B1, JUMP_WEIGHT, self.synapse_id+1, delay=i)
         S3 = synapse(B1, B0, JUMP_WEIGHT, self.synapse_id+2, delay=i)
 
-        # S4 = synapse(B0, B2, DEFAULT_THRESHOLD, self.synapse_id+3, delay=1)
-        # S5 = synapse(B1, B2, DEFAULT_THRESHOLD, self.synapse_id+4, delay=1)
-
         S4 = synapse(B0, B2, JUMP_WEIGHT, self.synapse_id+3, delay=i)
         S5 = synapse(B1, B2, JUMP_WEIGHT, self.synapse_id+4, delay=i)
 
+
+        # if not cycle, not needed for now 
         if cycle == None: 
             print("cycle None")
             exit(1)
@@ -553,6 +555,7 @@ class neuro():
                 s_id += 1
             self.synapse_id = s_id
 
+
     def PC(self, n, weights, thresholds, inter, d):
         c1_neurons = np.empty((n[0], n[1], len(thresholds)), dtype=type(neuron))
         c2_neurons = np.empty((n[0], n[1], len(thresholds)), dtype=type(neuron))
@@ -561,8 +564,10 @@ class neuro():
         self.neurons.append([])
         self.synapses.append([])
 
-
+        # different feature map
         for i in range(len(thresholds)): 
+
+            # setting up threshold neuron and C0 neuron
             B0 = neuron(0, i, thresholds[i], self.neuron_id, self.z_start)
             self.neuron_id += 1
 
@@ -582,12 +587,13 @@ class neuro():
             self.synapses[-1].append(synapse(B0, B1, JUMP_WEIGHT, self.synapse_id , delay=1))
             self.synapse_id  += 1
 
-            #TODO need to change 10 to the largest weight possible for reset 
+
             #reset happen at time inter + d and every inter
             self.PB(inter, d, self.init_neuron, B0, thresholds[i]+10, [(1, i, self.z_start), (2, i, self.z_start), (3, i, self.z_start)], [self.synapses[-1][-1]], n[0]*n[1])
             if thresholds[i] <= 0: 
                 self.PB(inter, self.time+d-1, self.global_init, B0, 0, [(4, i, self.z_start), (5, i, self.z_start), (6, i, self.z_start)], cycle=n[0]*n[1])
 
+            # set up C1 and C2 layer
             c1 = [] 
             c1_s = []
             for y in range(n[1]):
@@ -603,8 +609,8 @@ class neuro():
                     self.synapse_id += 3 
                     c1.append(c1_neurons[x][y][i])
                     c1_s.append(self.synapses[-1][-1])
-                    # self.PB(inter, d+2, self.init_neuron, c1_neurons[x][y][i], DEFAULT_THRESHOLD*100, [(1 + n[0]*n[1]*0 + (y*n[0]+x), i, self.z_start+1), (1 + n[0]*n[1]*1 + (y*n[0]+x), i, self.z_start+1), (1 + n[0]*n[1]*2 + (y*n[0]+x), i, self.z_start+1)], [self.synapses[-1][-1]], n[0]*n[1])
-            print(self.z_start + 2 + len(thresholds) + i)
+
+            # print(self.z_start + 2 + len(thresholds) + i)
             self.PB(inter, d+2, self.init_neuron, c1, DEFAULT_THRESHOLD*100, [(1, i, self.z_start+1), (2, i, self.z_start+1), (3, i, self.z_start+1)], c1_s, n[0]*n[1], c1=True)
 
         for x in range(len(last_layer_neurons)/2):
@@ -615,7 +621,6 @@ class neuro():
         self.neurons.append(c1_neurons)
         self.neurons.append(c2_neurons)
         self.z_start += 2 + len(thresholds) * 2
-
 
 
 class nida():
