@@ -24,7 +24,7 @@ class neuro():
 
     #   pass parameter and call architecture
     #   
-    def __init__(self, model, key, format, path=None, filename=None):
+    def __init__(self, model, key, format, path=None):
         self.model = model
         self.key = key
         if path == None:
@@ -69,7 +69,7 @@ class neuro():
 
         #   loop through layers
         for layer in model.layers[1:]:
-            print(self.time)
+            # print(self.time)
             if type(layer) == keras.layers.Conv2D:
                 print("keras.layers.Conv2D")
 
